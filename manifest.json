@@ -1,0 +1,50 @@
+{
+    "name": "dmm2ssw",
+    "short_name": "dmm2ssw",
+    "manifest_version": 2,
+    "version": "1.0.1",
+    "description": "FANZAからsougouwiki.com用のテキストを生成",
+    "icons": {
+        "16": "images/icon/icon_16.png",
+        "19": "images/icon/icon_19.png",
+        "38": "images/icon/icon_38.png",
+        "48": "images/icon/icon_48.png",
+        "128": "images/icon/icon_128.png",
+        "256": "images/icon/icon_256.png"
+    },
+    "browser_action": {
+        "default_icon": {
+            "16": "images/icon/icon_16.png",
+            "19": "images/icon/icon_19.png",
+            "38": "images/icon/icon_38.png",
+            "48": "images/icon/icon_48.png",
+            "128": "images/icon/icon_128.png",
+            "256": "images/icon/icon_256.png"
+        },
+        "default_title": "ddm2ssw",
+        "default_popup": "popup.html"
+    },
+    
+    "background": {
+        "scripts": [
+                    "js/jquery-2.1.1.min.js", "js/background.js"
+                    ],
+        "persistent": false
+    },
+    "content_scripts": [
+                        {
+                        "js": ["js/jquery-2.1.1.min.js", "js/content_scripts/common.js"],
+                        "matches": ["http://*.dmm.co.jp/*", "https://*.dmm.co.jp/*", "http://sougouwiki.com/*"]
+                        }
+                        ],
+    "permissions": [
+                    "tabs",
+                    "alarms",
+                    "clipboardRead",
+                    "storage",
+                    "webNavigation",
+                    "https://*.dmm.co.jp/*",
+                    "http://*.dmm.co.jp/*"
+                    ]
+    
+}
