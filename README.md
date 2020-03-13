@@ -1,0 +1,2 @@
+# dmm2ssw
+FANZAの情報を自動抽出してsougouwiki用のテキストを出力するchrome拡張機能
