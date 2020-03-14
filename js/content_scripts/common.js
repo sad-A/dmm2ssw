@@ -8,6 +8,7 @@
   var is_director = false;
   var is_ignore_same = false;
   var is_search_wiki = false;
+  var is_first_product = false;
   var title = "";
   var service = "";
   var duration = "";
@@ -55,6 +56,7 @@
       is_director = msg.is_director;
       is_ignore_same = msg.is_ignore_same;
       is_search_wiki = msg.is_search_wiki;
+      is_first_product = true;
       console.log("output: " + output);
       console.log("is_search_wiki: " + is_search_wiki);
       var adddiv = "<div id='dmm2ssw'></div>";
@@ -267,6 +269,8 @@
             } else if (text.indexOf("レーベル") != -1) {
               label = $(this).next().text();
               label = label.replace(/\r?\n/g, '');
+              label = label.replace("（", "／");
+              label = label.replace("）", "");
               for (var i = 3; i < msg._OMIT_LABEL.length; i += 2) {
                 // 総集編レーベル判定
                 if (series.indexOf(msg._OMIT_LABEL[i]) != -1) {
@@ -312,6 +316,10 @@
                     cast = cast.replace("[[]]／[[", "[[");
                     cast = cast.replace("]]／[[]]", "]]");
                     console.log("cast: " + cast);
+                    if(label == "----")
+                    {
+                       label = maker;
+                    }
                     var suburl = "";
                     console.log("is_search_wiki:" + is_search_wiki);
                     if (is_search_wiki && output == "actress") {
@@ -582,7 +590,13 @@
         if (msg.is_adultsite) {
           matometitle = msg.anothername + " " + msg.threesize;
         }
-        var joyumatome = "//" + matomerelease + " " + msg.hinban + "<br>" + "[[" + matometitle + "（" + msg.label + "）>" + msg.url + "]]" + wiki_label + wiki_series + "<br>" + "[[" + msg.smallimg + ">" + msg.largeimg + "]]" + "<br>" + cast_list + "\n<br>";
+                                       
+        var matomelabel = "";
+        if(msg.label != "----")
+        {
+          matomelabel = "（" + msg.label + "）";
+        }
+        var joyumatome = "//" + matomerelease + " " + msg.hinban + "<br>" + "[[" + matometitle + matomelabel + msg.url + "]]" + wiki_label + wiki_series + "<br>" + "[[" + msg.smallimg + ">" + msg.largeimg + "]]" + "<br>" + cast_list + "\n<br>";
         if (msg.is_omnibus) {
           $("body").find("div#omni_works").attr("style", "visibility:visible");
           $("body").find("div#omni_works").append(joyumatome);
@@ -629,7 +643,7 @@
         }
         var labelmatome = "";
         // 10連番ごとに
-        if(parseInt(msg.hinban.charAt(msg.hinban.length - 1)) == 1)
+        if(!is_first_product && parseInt(msg.hinban.charAt(msg.hinban.length - 1)) == 1)
         {
           if (!is_director) {
             labelmatome = "|~NO|PHOTO|TITLE|ACTRESS|RELEASE|NOTE|\n<br>";
@@ -639,6 +653,7 @@
             labelmatome += "|~NO|PHOTO|TITLE|ACTRESS|DIRECTOR|RELEASE|NOTE|\n<br>";
           }
         }
+        is_first_product = false;
         if (!is_director) {
           labelmatome += "|[[" + msg.hinban + ">" + msg.url + "]]|[[" + msg.smallimg + ">" + msg.largeimg + "]]|" + msg.title + "|" + matomecast + "|" + matomerelease + "|" + omnibus + "|\n<br>";
         }

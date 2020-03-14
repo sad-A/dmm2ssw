@@ -2,9 +2,12 @@ dmm2ssw
 ====
 chrome extension for dmm2ssw
 
-FANZAのページから情報を自動抽出して、sougouwiki用のwikiフォーマットを出力します。
+FANZAのページから情報を自動抽出して、sougouwiki用のwikiフォーマットテキストを出力します。
 
 FANZAのリストページ（/mono/dvd/-/list/=/など）、検索ページ（search/=/searchstr=）、作品詳細ページ（/-/detail/=/cid=）などで動作します。
+
+使い方解説動画
+https://youtu.be/M8n3DQthTW0
 
 # 使い方
 上記ページにて、アイコンをクリックすると、ラジオボタンで「レーベルまとめ用」、「女優まとめ用」を選べます。
