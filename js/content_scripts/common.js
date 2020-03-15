@@ -627,7 +627,7 @@
           }
         }
         // 誰も情報がない場合
-        else if (matomecast == "----") {
+        else if (matomecast == "[[----]]") {
           matomecast = "[[ ]]";
         }
         matomerelease = matomerelease.replace(/\u002f/g, '-');
