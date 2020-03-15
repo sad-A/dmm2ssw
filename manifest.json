@@ -1,8 +1,8 @@
 {
     "name": "dmm2ssw",
-    "short_name": "dmm2ssw",
+    "short_name": "D2S",
     "manifest_version": 2,
-    "version": "1.0.1",
+    "version": "1.0.2",
     "description": "FANZAからsougouwiki.com用のテキストを生成",
     "icons": {
         "16": "images/icon/icon_16.png",
