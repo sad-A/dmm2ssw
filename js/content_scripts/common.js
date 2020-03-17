@@ -596,7 +596,7 @@
         {
           matomelabel = "（" + msg.label + "）";
         }
-        var joyumatome = "//" + matomerelease + " " + msg.hinban + "<br>" + "[[" + matometitle + matomelabel + msg.url + "]]" + wiki_label + wiki_series + "<br>" + "[[" + msg.smallimg + ">" + msg.largeimg + "]]" + "<br>" + cast_list + "\n<br>";
+        var joyumatome = "//" + matomerelease + " " + msg.hinban + "<br>" + "[[" + matometitle + matomelabel + ">" + msg.url + "]]" + wiki_label + wiki_series + "<br>" + "[[" + msg.smallimg + ">" + msg.largeimg + "]]" + "<br>" + cast_list + "\n<br>";
         if (msg.is_omnibus) {
           $("body").find("div#omni_works").attr("style", "visibility:visible");
           $("body").find("div#omni_works").append(joyumatome);
