@@ -32,6 +32,7 @@
   var is_vr = false;
   var is_adultsite = false;
   var is_limited = false;
+  var is_title_fixed = false;
   var title_list = [];
   var baseurl_mgs = "mgstage.com";
   var mgsurl_detail = "product_detail";
@@ -186,6 +187,17 @@
         if(title == "")
         {
           title = $("meta[property='og:title'").attr("content");
+        }
+        is_title_fixed = false;
+        for(var i = 2; i < msg._CENSORED_WORDS.length; i+= 2) {
+          console.log("censored: " + msg._CENSORED_WORDS[i]);
+          if(title.indexOf(msg._CENSORED_WORDS[i]) != -1)
+          {
+            title = title.replace(msg._CENSORED_WORDS[i], "<font color='red'>" + msg._CENSORED_WORDS[i + 1] + "</font>");
+            console.log("title: " + title);
+            is_title_fixed = true;
+            i -= 2;
+          }
         }
         // アダルトサイトチェック
         is_adultsite = false;
@@ -419,7 +431,8 @@
                         is_adultsite: is_adultsite,
                         is_limited: is_limited,
                         output: output,
-                        is_search_wiki: is_search_wiki
+                        is_search_wiki: is_search_wiki,
+                        is_title_fixed: is_title_fixed
                       }, function (response) {
                         if (!self) {
                           window.close();
@@ -551,7 +564,8 @@
               is_adultsite: is_adultsite,
               is_limited: is_limited,
               output: output,
-              is_search_wiki: is_search_wiki
+              is_search_wiki: is_search_wiki,
+              is_title_fixed: is_title_fixed
             }, function (response) {
               if (!self) {
                 window.close();
@@ -561,7 +575,7 @@
           }
         }
       }
-      else(url.indexOf(baseurl_mgs) != 1)
+      else if(url.indexOf(baseurl_mgs) != 1)
       {
         title = $("title").text();
         title = title.substr(title.indexOf("「") + 1);
@@ -880,6 +894,35 @@
           labelmatome += "|[[" + msg.hinban + ">" + msg.url + "]]|[[" + msg.smallimg + ">" + msg.largeimg + "]]|" + matometitle + "|" + matomecast + "|" + msg.director + "|" + matomerelease + "|" + omnibus + "|\n<br>";
         }
         $("body").find("div#basic_works").append(labelmatome);
+      }
+      if(url.indexOf(baseurl_dmm) != -1)
+      {
+        $("body").find("td#mu").prepend(adddiv);
+      }
+      else if(url.indexOf(baseurl_mgs) != -1)
+      {
+        $("body").find("ul.Bread_crumb").prepend(adddiv);
+        $("body").find("ul.Bread_crumb").removeClass().addClass("Bread_crumb");
+      }
+      
+      if(msg.is_title_fixed)
+      {
+        var alert = $("div#title_fix_alert");
+        if(alert.length == 0)
+        {
+          console.log("add alert");
+          var adddiv = "<div id='title_fix_alert'><font color='red'>※ 赤字のタイトルは伏字を予測解除しています。コピペする際は注意してください。</font></div>";
+          if(url.indexOf(baseurl_dmm) != -1)
+          {
+            $("body").find("td#mu").prepend(adddiv);
+            console.log("add alert");
+          }
+          else if(url.indexOf(baseurl_mgs) != -1)
+          {
+            $("body").find("ul.Bread_crumb").prepend(adddiv);
+            console.log("add alert");
+          }
+        }
       }
       console.log("result");
     }

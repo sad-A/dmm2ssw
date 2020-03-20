@@ -8,7 +8,7 @@
   var wiki_msg = {};
   var result;
   var output;
-  var valnames = ["_IGNORE_PERFORMERS", "_FORCE_CHK_SALE_SR", "_FORCE_CHK_SALE_MK", "_RENTAL_PRECEDES", "_HIDE_NAMES", "_GENRE_LIMITED", "_GENRE_BD", "_GENRE_VR", "_GENRE_IV", "_GENRE_OMNI", "_OMIT_LABEL", "_OMIT_SERIES", "_OMIT_SUSS_4H", "_OMNI_PREFIX", "_OMITWORDS", "_ROOKIES", "_IV_PREFIX", "_REDIRECTS", "_NUMBERS_IN_PREFIX"];
+  var valnames = ["_IGNORE_PERFORMERS", "_FORCE_CHK_SALE_SR", "_FORCE_CHK_SALE_MK", "_RENTAL_PRECEDES", "_HIDE_NAMES", "_GENRE_LIMITED", "_GENRE_BD", "_GENRE_VR", "_GENRE_IV", "_GENRE_OMNI", "_OMIT_LABEL", "_OMIT_SERIES", "_OMIT_SUSS_4H", "_OMNI_PREFIX", "_OMITWORDS", "_ROOKIES", "_IV_PREFIX", "_REDIRECTS", "_NUMBERS_IN_PREFIX", "_CENSORED_WORDS"];
   var vals = {};
 
   function readSpreadSheet(pagename) {
@@ -140,7 +140,8 @@
         _GENRE_VR: vals["_GENRE_VR"],
         _GENRE_OMNI: vals["_GENRE_OMNI"],
         _IGNORE_PERFORMERS: vals["_IGNORE_PERFORMERS"],
-        _NUMBERS_IN_PREFIX: vals["_NUMBERS_IN_PREFIX"]
+        _NUMBERS_IN_PREFIX: vals["_NUMBERS_IN_PREFIX"],
+        _CENSORED_WORDS: vals["_CENSORED_WORDS"]
       });
     } else if (message.type == "open_detail") {
       main_tab_id = sender.tab.id;
@@ -210,7 +211,8 @@
         is_iv: message.is_iv,
         is_vr: message.is_vr,
         is_adultsite: message.is_adultsite,
-        is_limited: message.is_limited
+        is_limited: message.is_limited,
+        is_title_fixed: message.is_title_fixed
       });
       sendResponse();
     }
@@ -235,7 +237,8 @@
             _GENRE_VR: vals["_GENRE_VR"],
             _GENRE_OMNI: vals["_GENRE_OMNI"],
             _IGNORE_PERFORMERS: vals["_IGNORE_PERFORMERS"],
-            _NUMBERS_IN_PREFIX: vals["_NUMBERS_IN_PREFIX"]
+            _NUMBERS_IN_PREFIX: vals["_NUMBERS_IN_PREFIX"],
+            _CENSORED_WORDS: vals["_CENSORED_WORDS"]
           });
           chrome.tabs.sendMessage(main_tab_id, {
             type: "next_tab",
