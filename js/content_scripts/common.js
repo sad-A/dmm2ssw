@@ -731,7 +731,8 @@
             is_adultsite: is_adultsite,
             is_limited: is_limited,
             output: output,
-            is_search_wiki: is_search_wiki
+            is_search_wiki: is_search_wiki,
+            is_title_fixed: is_title_fixed
           }, function (response) {
             if (!self) {
               window.close();
@@ -773,7 +774,8 @@
         is_adultsite: is_adultsite,
         is_limited: is_limited,
         output: output,
-        is_search_wiki: is_search_wiki
+        is_search_wiki: is_search_wiki,
+        is_title_fixed: is_title_fixed
       }, function (response) {
         if (!self) {
           window.close();
@@ -895,16 +897,6 @@
         }
         $("body").find("div#basic_works").append(labelmatome);
       }
-      if(url.indexOf(baseurl_dmm) != -1)
-      {
-        $("body").find("td#mu").prepend(adddiv);
-      }
-      else if(url.indexOf(baseurl_mgs) != -1)
-      {
-        $("body").find("ul.Bread_crumb").prepend(adddiv);
-        $("body").find("ul.Bread_crumb").removeClass().addClass("Bread_crumb");
-      }
-      
       if(msg.is_title_fixed)
       {
         var alert = $("div#title_fix_alert");
