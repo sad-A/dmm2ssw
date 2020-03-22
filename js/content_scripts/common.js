@@ -2,11 +2,14 @@
   var link_list = [];
   var copy_list = [];
   var open_next_tab;
+  var initialize;
   var url;
   var output;
   var self = false;
+  var is_renban = false;
   var is_director = false;
-  var is_ignore_same = false;
+  var is_ignore_limited = false;
+  var is_ignore_dod = false;
   var is_search_wiki = false;
   var is_first_product = false;
   var title = "";
@@ -24,6 +27,7 @@
   var genre = [];
   var hinban = "";
   var prefix = "";
+  var number = 0;
   var sougouwikipage = "";
   var smallimg = "";
   var largeimg = "";
@@ -32,6 +36,7 @@
   var is_vr = false;
   var is_adultsite = false;
   var is_limited = false;
+  var is_dod = false;
   var is_title_fixed = false;
   var title_list = [];
   var baseurl_mgs = "mgstage.com";
@@ -55,10 +60,13 @@
   chrome.runtime.onMessage.addListener(function (msg, sender) {
     // exportボタンクリック時
     if (msg.type == "export") {
+      initialize();
       url = msg.url;
       output = msg.output;
+      is_renban = msg.is_renban;
       is_director = msg.is_director;
-      is_ignore_same = msg.is_ignore_same;
+      is_ignore_limited = msg.is_ignore_limited;
+      is_ignore_dod = msg.is_ignore_dod;
       is_search_wiki = msg.is_search_wiki;
       is_first_product = true;
       console.log("output: " + output);
@@ -95,53 +103,58 @@
         $("body").find("div#dmm2ssw").append(omnidiv);
         $("body").find("div#dmm2ssw").append(adultsitediv);
       }
+      // FANZAの場合
       if (url.indexOf(baseurl_dmm) != -1) {
         // detail
         if (url.indexOf(url_details) != -1) {
           self = true;
+          console.log("send message: to_parse");
           chrome.runtime.sendMessage({
             type: "to_parse",
             url: url,
             link: url,
             output: output,
             is_search_wiki: is_search_wiki
-          }, function (response) {});
+          });
         }
         // list
         else if (url.indexOf(url_list) != -1) {
           // actress
           if (url.indexOf(url_actress) != -1) {}
-        }
         // label
-        else if (url.indexOf(url_label) != -1) {} else {}
-        $("p.tmb").each(function () {
-          var href = $(this).find("a").attr("href");
-          console.log(href);
-          if(output == "label")
-          {
-            // 下を最新にするために、配列の先頭に追加
-            link_list.unshift(href);
-          }
-          else
-          {
-            // 上を最新にするために、配列の先頭に追加
-            link_list.push(href);
-          }
-        });
+          else if (url.indexOf(url_label) != -1) {}
+          else {}
+          $("p.tmb").each(function () {
+            var href = $(this).find("a").attr("href");
+            console.log(href);
+            if(output == "label")
+            {
+              // 下を最新にするために、配列の先頭に追加
+              link_list.unshift(href);
+            }
+            else
+            {
+              // 上を最新にするために、配列の先頭に追加
+              link_list.push(href);
+            }
+          });
+        }
       }
+      // MGS動画の場合
       else if(url.indexOf(baseurl_mgs) != -1)
       {
         // detail
         if(url.indexOf(mgsurl_detail) != -1)
         {
           self = true;
+          console.log("send message: to_parse");
           chrome.runtime.sendMessage({
             type: "to_parse",
             url: url,
             link: url,
             output: output,
             is_search_wiki: is_search_wiki
-          }, function (response) {});
+          });
         }
         // list
         else if(url.indexOf(mgsurl_search) != -1)
@@ -164,6 +177,7 @@
         }
       }
       open_next_tab();
+      return true;
     }
     // 作品ページを解析
     else if (msg.type == "parse_detail") {
@@ -190,15 +204,14 @@
         }
         is_title_fixed = false;
         for(var i = 2; i < msg._CENSORED_WORDS.length; i+= 2) {
-          console.log("censored: " + msg._CENSORED_WORDS[i]);
           if(title.indexOf(msg._CENSORED_WORDS[i]) != -1)
           {
             title = title.replace(msg._CENSORED_WORDS[i], "<font color='red'>" + msg._CENSORED_WORDS[i + 1] + "</font>");
-            console.log("title: " + title);
             is_title_fixed = true;
             i -= 2;
           }
         }
+        console.log("title: " + title);
         // アダルトサイトチェック
         is_adultsite = false;
         if (url.indexOf("videoc") != -1) {
@@ -308,10 +321,18 @@
               // 限定盤ジャンルチェック
               is_limited = false;
               for (var i = 3; i < msg._GENRE_LIMITED.length; i += 2) {
-                console.log("limited word: " + msg._GENRE_LIMITED[i]);
                 if (genre.indexOf(msg._GENRE_LIMITED[i]) != -1) {
                   is_limited = true;
                   console.log("is limited: " + is_limited);
+                  break;
+                }
+              }
+              // DODジャンルチェック
+              is_dod = false;
+              for (var i = 3; i < msg._GENRE_DOD.length; i += 2) {
+                if (genre.indexOf(msg._GENRE_DOD[i]) != -1) {
+                  is_dod = true;
+                  console.log("is dod: " + is_dod);
                   break;
                 }
               }
@@ -368,6 +389,11 @@
                   success: function (msg) {
                     cast = msg;
                     cast = cast.replace(/<("[^"]*"|'[^']*'|[^'">])*>/g, '');
+                    // 女優の別名表記を削除
+                    while(cast.indexOf("（") != -1)
+                    {
+                      cast = cast.substr(0, cast.indexOf("（")) + cast.substr(cast.indexOf("）") + 1);
+                    }
                     cast = "[[" + cast + "]]";
                     cast = cast.replace(/\r?\n/g, "]]／[[");
                     cast = cast.replace("[[]]／[[", "[[");
@@ -386,6 +412,7 @@
                         suburl = suburl.substr(pos);
                       }
                       suburl = "http://sougouwiki.com/search?keywords=" + suburl;
+                      console.log("send message: open_next_wiki");
                       chrome.runtime.sendMessage({
                         type: "open_next_wiki",
                         url: url,
@@ -400,9 +427,10 @@
                         if (response.close && !self) {
                           window.close();
                         }
+                        console.log("response received");
                       });
-                      console.log("open_next_wiki");
                     } else {
+                      console.log("send message: send_detail");
                       chrome.runtime.sendMessage({
                         type: "send_detail",
                         url: url,
@@ -418,6 +446,7 @@
                         wiki_series: "",
                         hinban: hinban,
                         prefix: prefix,
+                        number: number,
                         smallimg: smallimg,
                         largeimg: largeimg,
                         release: release,
@@ -430,6 +459,7 @@
                         is_vr: is_vr,
                         is_adultsite: is_adultsite,
                         is_limited: is_limited,
+                        is_dod: is_dod,
                         output: output,
                         is_search_wiki: is_search_wiki,
                         is_title_fixed: is_title_fixed
@@ -437,8 +467,8 @@
                         if (!self) {
                           window.close();
                         }
+                        console.log("response received");
                       });
-                      console.log("send_detail");
                     }
                   }
                 });
@@ -481,6 +511,7 @@
                 latterhalf = latterhalf.substr(2);
               }
               var numbers_in_prefix = false;
+              // プレフィックスに数字が含まれるもの
               for (var i = 0; i < msg._NUMBERS_IN_PREFIX.length; i += 2) {
                 if (msg._NUMBERS_IN_PREFIX[i] == "**id") {
                   if (prefix.search(/[0-9]{2}ID/) != -1) {
@@ -494,13 +525,16 @@
                   break;
                 }
               }
+              // プレフィックスに数字が入っていないものは、数字や、h_を消す
               if (!numbers_in_prefix) {
                 prefix = prefix.replace(/H_/, '');
                 prefix = prefix.replace(/[0-9]/g, '');
               }
               hinban = prefix + "-" + latterhalf;
+              number = parseInt(latterhalf);
               console.log("hinban: " + hinban);
               console.log("prefix: " + prefix);
+              console.log("number: " + number);
             } else if (text.indexOf("種類") != 1) {
               service = $(this).next().text();
               service = service.replace(/\r?\n/g, '');
@@ -511,6 +545,11 @@
         // 出演者探索ができないとき
         if (!use_ajax) {
           var suburl = "";
+          // 女優の別名表記を削除
+          while(cast.indexOf("（") != -1)
+          {
+            cast = cast.substr(0, cast.indexOf("（")) + cast.substr(cast.indexOf("）") + 1);
+          }
           console.log("is_search_wiki:" + is_search_wiki);
           if (is_search_wiki && output == "actress") {
             var suburl = url;
@@ -519,6 +558,7 @@
               suburl = suburl.substr(pos);
             }
             suburl = "http://sougouwiki.com/search?keywords=" + suburl;
+            console.log("send message: open_next_wiki");
             chrome.runtime.sendMessage({
               type: "open_next_wiki",
               url: url,
@@ -533,9 +573,10 @@
               if (response.close && !self) {
                 window.close();
               }
+              console.log("response received");
             });
-            console.log("open_next_wiki");
           } else {
+            console.log("send message: send_detail");
             chrome.runtime.sendMessage({
               type: "send_detail",
               url: url,
@@ -551,6 +592,7 @@
               wiki_series: "",
               hinban: hinban,
               prefix: prefix,
+              number: number,
               smallimg: smallimg,
               largeimg: largeimg,
               release: release,
@@ -563,6 +605,7 @@
               is_vr: is_vr,
               is_adultsite: is_adultsite,
               is_limited: is_limited,
+              is_dod: is_dod,
               output: output,
               is_search_wiki: is_search_wiki,
               is_title_fixed: is_title_fixed
@@ -570,8 +613,8 @@
               if (!self) {
                 window.close();
               }
+              console.log("response received");
             });
-            console.log("send_detail");
           }
         }
       }
@@ -662,6 +705,7 @@
             is_vr = false;
             is_iv = false;
             is_limited = false;
+            is_dod = false;
             if(genre.indexOf("VR") != -1)
             {
               is_vr = true;
@@ -686,6 +730,7 @@
             suburl = suburl.substr(pos);
           }
           suburl = "http://sougouwiki.com/search?keywords=" + suburl;
+          console.log("send message: open_next_wiki");
           chrome.runtime.sendMessage({
             type: "open_next_wiki",
             url: url,
@@ -700,9 +745,10 @@
             if (response.close && !self) {
               window.close();
             }
+            console.log("response received");
           });
-          console.log("open_next_wiki");
         } else {
+          console.log("send message: send_detail");
           chrome.runtime.sendMessage({
             type: "send_detail",
             url: url,
@@ -730,6 +776,7 @@
             is_vr: is_vr,
             is_adultsite: is_adultsite,
             is_limited: is_limited,
+            is_dod: is_dod,
             output: output,
             is_search_wiki: is_search_wiki,
             is_title_fixed: is_title_fixed
@@ -737,15 +784,15 @@
             if (!self) {
               window.close();
             }
+            console.log("response received");
           });
-          console.log("send_detail");
         }
       }
-      return;
+      return true;
     }
     // レーベル・シリーズが判明済
     else if (msg.type == "found_page_list") {
-      console.log("found_page_list");
+      console.log("send message: send_detail");
       chrome.runtime.sendMessage({
         type: "send_detail",
         url: url,
@@ -773,6 +820,7 @@
         is_vr: is_vr,
         is_adultsite: is_adultsite,
         is_limited: is_limited,
+        is_dod: is_dod,
         output: output,
         is_search_wiki: is_search_wiki,
         is_title_fixed: is_title_fixed
@@ -780,18 +828,27 @@
         if (!self) {
           window.close();
         }
+        console.log("response received");
       });
+      return true;
     // 次の作品を開く
     } else if (msg.type == "next_tab") {
       open_next_tab();
       console.log("next_tab");
+      return true;
     }
     // 結果表示
     else if (msg.type == "result") {
-      if (!self && is_ignore_same) {
+      if (!self && is_ignore_limited) {
         if (msg.is_limited) {
           console.log("ignore limited product");
-          return;
+          return true;
+        }
+      }
+      if (!self && is_ignore_dod) {
+        if (msg.is_dod) {
+          console.log("ignore DOD product");
+          return true;
         }
       }
       var matometitle = msg.title;
@@ -876,8 +933,31 @@
           omnibus = "総集編作品";
         }
         var labelmatome = "";
-        // 10連番ごとに
-        if(!is_first_product && parseInt(msg.hinban.charAt(msg.hinban.length - 1)) == 1)
+        // 連番出力の場合は、連番の抜けを埋める
+        if(!is_first_product && is_renban && msg.number != NaN)
+        {
+          var sum = 1;
+          // 番号が同じか低い場合はスキップ
+          if(number + sum > msg.number)
+          {
+            console.log("ignore this product: " + msg.hinban);
+            return true;
+          }
+          while(number + sum < msg.number)
+          {
+            console.log("insert: "+ msg.prefix + "-" + String(number + sum));
+            var labelmatome = "|" + msg.prefix + "-" + String(number + sum) + "|||||欠番|\n<br>";
+            if (is_director) {
+              labelmatome = "|" + msg.prefix + "-" + String(number + sum) + "||||||欠番|\n<br>";
+            }
+            $("body").find("div#basic_works").append(labelmatome);
+            sum++;
+          }
+        }
+        labelmatome = "";
+        number = msg.number;
+        // 10連番ごとに見出し行を挿入
+        if(!is_first_product && msg.number%10 == 1)
         {
           if (!is_director) {
             labelmatome = "|~NO|PHOTO|TITLE|ACTRESS|RELEASE|NOTE|\n<br>";
@@ -916,21 +996,64 @@
           }
         }
       }
-      console.log("result");
+      console.log("result: " + msg.hinban);
+      return true;
     }
     return true;
   });
+ 
   open_next_tab = function () {
     if (link_list.length > 0) {
+      console.log("send message: open_detail");
       chrome.runtime.sendMessage({
         type: "open_detail",
         url: url,
         link: link_list[0],
         output: output,
         is_search_wiki: is_search_wiki
-      }, function (response) {});
+      });
       link_list.splice(0, 1);
     }
   };
-  open_next_wiki = function () {};
+ 
+  initialize = function() {
+    link_list = [];
+    copy_list = [];
+    url = "";
+    output = "";
+    self = false;
+    is_renban = false;
+    is_director = false;
+    is_ignore_limited = false;
+    is_ignore_dod = false;
+    is_search_wiki = false;
+    is_first_product = false;
+    title = "";
+    service = "";
+    duration = "";
+    release = "";
+    broadcast_release = "";
+    director = "----";
+    label = "";
+    maker = "";
+    series = "";
+    cast = "";
+    anothername = "";
+    threesize = "";
+    genre = [];
+    hinban = "";
+    prefix = "";
+    number = 0;
+    sougouwikipage = "";
+    smallimg = "";
+    largeimg = "";
+    is_omnibus = false;
+    is_iv = false;
+    is_vr = false;
+    is_adultsite = false;
+    is_limited = false;
+    is_dod = false;
+    is_title_fixed = false;
+    title_list = [];
+  };
 }).call(this);

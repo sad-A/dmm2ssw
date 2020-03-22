@@ -8,7 +8,7 @@
   var wiki_msg = {};
   var result;
   var output;
-  var valnames = ["_IGNORE_PERFORMERS", "_FORCE_CHK_SALE_SR", "_FORCE_CHK_SALE_MK", "_RENTAL_PRECEDES", "_HIDE_NAMES", "_GENRE_LIMITED", "_GENRE_BD", "_GENRE_VR", "_GENRE_IV", "_GENRE_OMNI", "_OMIT_LABEL", "_OMIT_SERIES", "_OMIT_SUSS_4H", "_OMNI_PREFIX", "_OMITWORDS", "_ROOKIES", "_IV_PREFIX", "_REDIRECTS", "_NUMBERS_IN_PREFIX", "_CENSORED_WORDS"];
+  var valnames = ["_IGNORE_PERFORMERS", "_FORCE_CHK_SALE_SR", "_FORCE_CHK_SALE_MK", "_RENTAL_PRECEDES", "_HIDE_NAMES", "_GENRE_LIMITED", "_GENRE_DOD", "_GENRE_BD", "_GENRE_VR", "_GENRE_IV", "_GENRE_OMNI", "_OMIT_LABEL", "_OMIT_SERIES", "_OMIT_SUSS_4H", "_OMNI_PREFIX", "_OMITWORDS", "_ROOKIES", "_IV_PREFIX", "_REDIRECTS", "_NUMBERS_IN_PREFIX", "_CENSORED_WORDS"];
   var vals = {};
 
   function readSpreadSheet(pagename) {
@@ -57,10 +57,6 @@
       var found = false;
       var label_list = "";
       var series_list = "";
-      var response = {
-        label: label_list,
-        series: series_list
-      };
       if (result == 0) {
         chrome.tabs.sendMessage(sender.tab.id, {
           type: "found_page_list",
@@ -121,10 +117,12 @@
     x.send();
   }
   chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
+    console.log("message received: " + message.type);
     if (message.type == "to_parse") {
       main_tab_id = sender.tab.id;
       output = message.output;
       is_search_wiki = message.is_search_wiki;
+      console.log("send message: parse_detail to: " + sender.tab.id);
       chrome.tabs.sendMessage(sender.tab.id, {
         type: "parse_detail",
         output: output,
@@ -135,6 +133,7 @@
         _OMIT_SERIES: vals["_OMIT_SERIES"],
         _OMIT_LABEL: vals["_OMIT_LABEL"],
         _GENRE_LIMITED: vals["_GENRE_LIMITED"],
+        _GENRE_DOD: vals["_GENRE_DOD"],
         _GENRE_BD: vals["_GENRE_BD"],
         _GENRE_IV: vals["_GENRE_IV"],
         _GENRE_VR: vals["_GENRE_VR"],
@@ -143,6 +142,7 @@
         _NUMBERS_IN_PREFIX: vals["_NUMBERS_IN_PREFIX"],
         _CENSORED_WORDS: vals["_CENSORED_WORDS"]
       });
+      return true;
     } else if (message.type == "open_detail") {
       main_tab_id = sender.tab.id;
       output = message.output;
@@ -155,34 +155,27 @@
         ids.push(tab.id);
         console.log("tab id: " + tab.id);
       });
-      sendResponse();
       return true;
     } else if (message.type == "open_next_wiki") {
       // 女優まとめページのときはwikiからレーベル／シリーズまとめページを検索
       if (output.indexOf("actress") != -1) {
         wiki_msg = message;
         var res = searchSougouWiki(sender, message.link);
-        //                                      chrome.tabs.create({active: false, url: message.link }, function(tab){
-        //                                                         wiki_ids.push(tab.id);
-        //                                                         detail_info[tab.id] = [message.maker, message.label, message.series, message.prefix, sender.tab.id];
-        //                                                         console.log("wiki tab id: " + tab.id);
-        //                                                         });
+        console.log("send response: " + message.type + " to: " + sender.tab.id);
         sendResponse({
           close: false
         });
       } else {
-        //                                      chrome.tabs.sendMessage(sender.tab.id, {type: "search_wiki", output: output, url: tab.url, maker: message.maker, label: message.label, series: message.series, prefix: message.prefix, tabid: sender.tab.id
-        //                                                              }, function(res){
-        //                                                              });
+        console.log("send response: " + message.type + " to: " + sender.tab.id);
         sendResponse({
           close: true
         });
       }
+      return true;
     }
     // シリーズ一覧を取得済
     else if (message.type == "send_detail") {
-      console.log("send_detail");
-      console.log("limited: " + message.is_limited);
+      console.log("send message: result to: " + main_tab_id);
       chrome.tabs.sendMessage(main_tab_id, {
         type: "result",
         output: message.output,
@@ -200,6 +193,7 @@
         wiki_series: message.wiki_series,
         hinban: message.hinban,
         prefix: message.prefix,
+        number: message.number,
         smallimg: message.smallimg,
         largeimg: message.largeimg,
         release: message.release,
@@ -212,9 +206,13 @@
         is_vr: message.is_vr,
         is_adultsite: message.is_adultsite,
         is_limited: message.is_limited,
+        is_dod: message.is_dod,
         is_title_fixed: message.is_title_fixed
       });
+      
+      console.log("send response: " + message.type + " to: " + sender.tab.id);
       sendResponse();
+      return true;
     }
   });
   chrome.tabs.onUpdated.addListener(function (tabid, info, tab) {
@@ -222,6 +220,7 @@
       // 新しい作品ページの読み込み完了時はtab_openとnext_tabを送信
       for (var i = 0; i < ids.length; i++) {
         if (tabid == ids[i]) {
+          console.log("send message: parse_detail to: " + tabid);
           chrome.tabs.sendMessage(tabid, {
             type: "parse_detail",
             output: output,
@@ -232,6 +231,7 @@
             _OMIT_SERIES: vals["_OMIT_SERIES"],
             _OMIT_LABEL: vals["_OMIT_LABEL"],
             _GENRE_LIMITED: vals["_GENRE_LIMITED"],
+            _GENRE_DOD: vals["_GENRE_DOD"],
             _GENRE_BD: vals["_GENRE_BD"],
             _GENRE_IV: vals["_GENRE_IV"],
             _GENRE_VR: vals["_GENRE_VR"],
@@ -240,6 +240,7 @@
             _NUMBERS_IN_PREFIX: vals["_NUMBERS_IN_PREFIX"],
             _CENSORED_WORDS: vals["_CENSORED_WORDS"]
           });
+          console.log("send message: next_tab to: " + main_tab_id);
           chrome.tabs.sendMessage(main_tab_id, {
             type: "next_tab",
             output: output,
@@ -250,12 +251,14 @@
         }
       }
     }
+    return true;
   });
   chrome.alarms.onAlarm.addListener(function (alarm) {
     if (copy_list.length > 0) {
       saveToClipboard(copy_list[0]);
       copy_list.splice(0, 1);
     }
+    return true;
   });
 
   function saveToClipboard(str) {
