@@ -2,7 +2,7 @@
     "name": "dmm2ssw",
     "short_name": "D2S",
     "manifest_version": 2,
-    "version": "1.1.3",
+    "version": "1.1.4",
     "description": "FANZAからsougouwiki.com用のテキストを生成",
     "icons": {
         "16": "images/icon/icon_16.png",
@@ -34,7 +34,17 @@
     "content_scripts": [
                         {
                         "js": ["js/jquery-2.1.1.min.js", "js/content_scripts/common.js"],
-                        "matches": ["http://*.dmm.co.jp/*", "https://*.dmm.co.jp/*", "http://sougouwiki.com/*", "https://*.mgstage.com/*"]
+                        "matches": [
+                                    "http://*.dmm.co.jp/*",
+                                    "https://*.dmm.co.jp/*",
+                                    "http://sougouwiki.com/*",
+                                    "https://*.mgstage.com/*",
+                                    "http://*.g-area.org/*",
+                                    "https://mywife.cc/*",
+                                    "http://www.r-file.com/*",
+                                    "https://*.caribbeancom.com/*",
+                                    "https://*.1pondo.tv/*"
+                                    ]
                         }
                         ],
     "permissions": [
@@ -45,7 +55,12 @@
                     "webNavigation",
                     "https://*.dmm.co.jp/*",
                     "http://*.dmm.co.jp/*",
-                    "https://*.mgstage.com/*"
+                    "https://*.mgstage.com/*",
+                    "http://*.g-area.org/*",
+                    "https://mywife.cc/*",
+                    "http://www.r-file.com/*",
+                    "https://*.caribbeancom.com/*",
+                    "https://*.1pondo.tv/*"
                     ]
     
 }

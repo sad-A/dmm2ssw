@@ -3,6 +3,8 @@
   var copy_list = [];
   var open_next_tab;
   var initialize;
+  var send_detail_message;
+  var send_to_parse;
   var url;
   var output;
   var self = false;
@@ -11,6 +13,7 @@
   var is_ignore_limited = false;
   var is_ignore_dod = false;
   var is_search_wiki = false;
+  var is_search_release_with_wiki = false;
   var is_first_product = false;
   var title = "";
   var service = "";
@@ -29,20 +32,26 @@
   var prefix = "";
   var number = 0;
   var sougouwikipage = "";
+  var wiki_label = "";
+  var wiki_series = "";
   var smallimg = "";
   var largeimg = "";
   var is_omnibus = false;
   var is_iv = false;
   var is_vr = false;
   var is_adultsite = false;
+  var is_exbroadcast = false;
   var is_limited = false;
   var is_dod = false;
   var is_title_fixed = false;
   var title_list = [];
-  var baseurl_mgs = "mgstage.com";
-  var mgsurl_detail = "product_detail";
-  var mgsurl_search = "search/search.php";
   var baseurl_dmm = "dmm.co.jp";
+  var baseurl_mgs = "mgstage.com";
+  var baseurl_perfectg = "g-area.org";
+  var baseurl_mywife = "mywife.cc";
+  var baseurl_realfile = "r-file.com";
+  var baseurl_carib = "caribbeancom.com";
+  var baseurl_pondotv = "1pondo.tv";
   var baseurl_ssw = "sougouwiki.com";
   var url_details = "-/detail/=/cid=";
   var url_list = "-/list/=/";
@@ -51,6 +60,20 @@
   var url_maker = "article=maker";
   var url_keyword = "article=keyword";
   var url_search = "-/search/=/";
+  var mgsurl_detail = "product_detail";
+  var mgsurl_search = "search/search.php";
+  var perfectgurl_detail = "sample_pg";
+  var mywifeurl_detail = "teigaku/model";
+  var realfileurl_teigaku_detail = "teigaku/item";
+  var realfileurl_tanpin_detail = "tanpin/item";
+  var cariburl_detail = "moviepages";
+  var cariburl_search = "search";
+  var cariburl_searchact = "search_act";
+  var cariburl_list = "listpages";
+  var pondotvurl_detail = "movies";
+  var pondotvurl_search = "search";
+  var pondotvurl_list = "list";
+ 
   var servicedic = {
     "dvd": "mono/dvd",
     "rental": "rental",
@@ -62,6 +85,7 @@
     if (msg.type == "export") {
       initialize();
       url = msg.url;
+      console.log("url: " + url);
       output = msg.output;
       is_renban = msg.is_renban;
       is_director = msg.is_director;
@@ -72,14 +96,74 @@
       console.log("output: " + output);
       console.log("is_search_wiki: " + is_search_wiki);
       var adddiv = "<div id='dmm2ssw'></div>";
+      // FANZAの場合
       if(url.indexOf(baseurl_dmm) != -1)
       {
         $("body").find("td#mu").prepend(adddiv);
       }
+      //MGSの場合
       else if(url.indexOf(baseurl_mgs) != -1)
       {
         $("body").find("ul.Bread_crumb").prepend(adddiv);
         $("body").find("ul.Bread_crumb").removeClass().addClass("Bread_crumb");
+      }
+      // Perfect-Gの場合
+      else if(url.indexOf(baseurl_perfectg) != -1)
+      {
+        // 個別ページのみ対応
+        if(url.indexOf(perfectgurl_detail) != -1)
+        {
+          // 女優まとめページのみ対応
+          if(output == "actress")
+          {
+            $("body").find("div.co_ww").first().prepend(adddiv);
+          }
+        }
+      }
+      // 舞ワイフの場合
+      else if(url.indexOf(baseurl_mywife) != -1)
+      {
+        // 個別ページのみ対応
+        if(url.indexOf(mywifeurl_detail) != -1)
+        {
+          // 女優まとめページのみ対応
+          if(output == "actress")
+          {
+            $("body").find("div.model01").first().prepend(adddiv);
+            $("body").find("div.model01").first().attr("style", "color: white");
+          }
+        }
+      }
+      // RealFileの場合
+      else if(url.indexOf(baseurl_realfile) != -1)
+      {
+        // 個別ページのみ対応
+        if(url.indexOf(realfileurl_teigaku_detail) != -1 || url.indexOf(realfileurl_tanpin_detail) != -1)
+        {
+          // 女優まとめページのみ対応
+          if(output == "actress")
+          {
+            $("body").find("div#gallery_girl_intro").prepend(adddiv);
+          }
+        }
+      }
+      // カリビアンコムの場合
+      else if(url.indexOf(baseurl_carib) != -1)
+      {
+        // 女優まとめページのみ対応
+        if(output == "actress")
+        {
+          $("body").find("div#main").prepend(adddiv);
+        }
+      }
+      // 一本道の場合
+      else if(url.indexOf(baseurl_pondotv) != -1)
+      {
+        // 女優まとめページのみ対応
+        if(output == "actress")
+        {
+          $("body").find("div.contents").first().prepend(adddiv);
+        }
       }
       if (output == "label") {
         var labelmatome = "{| class=\"edit\"\n<br>|~NO|PHOTO|TITLE|ACTRESS|DIRECTOR|RELEASE|NOTE|\n<br>";
@@ -87,43 +171,46 @@
           labelmatome = "{| class=\"edit\"\n<br>|~NO|PHOTO|TITLE|ACTRESS|RELEASE|NOTE|\n<br>";
         }
         $("body").find("div#dmm2ssw").append(labelmatome);
-        var basicdiv = '<div id="basic_works"></div>'
+        var basicdiv = '<div id="basic_works"></div>';
         $("body").find("div#dmm2ssw").append(basicdiv);
         var enddiv = "|}\n<br>";
         $("body").find("div#dmm2ssw").append(enddiv);
       } else if (output == "actress") {
-        var basicdiv = '<div id="basic_works"></div>'
-        var vrdiv = '<div id="vr_works" style="visibility:hidden">----\n<br>**VR作品\n<br></div>'
-        var ivdiv = '<div id="iv_works" style="visibility:hidden">----\n<br>**イメージ作品\n<br></div>'
-        var omnidiv = '<div id="omni_works" style="visibility:hidden">----\n<br>**総集編作品\n<br></div>'
-        var adultsitediv = '<div id="adultsite_works" style="visibility:hidden">----\n<br>**アダルトサイト\n<br></div>'
-        $("body").find("div#dmm2ssw").append(basicdiv);
-        $("body").find("div#dmm2ssw").append(vrdiv);
-        $("body").find("div#dmm2ssw").append(ivdiv);
-        $("body").find("div#dmm2ssw").append(omnidiv);
-        $("body").find("div#dmm2ssw").append(adultsitediv);
+        var basicdiv = '<div id="basic_works"></div>';
+        var vrdiv = '<div id="vr_works" style="visibility:hidden">----\n<br>**VR作品\n<br></div>';
+        var ivdiv = '<div id="iv_works" style="visibility:hidden">----\n<br>**イメージ作品\n<br></div>';
+        var omnidiv = '<div id="omni_works" style="visibility:hidden">----\n<br>**総集編作品\n<br></div>';
+        var adultsitediv = '<div id="adultsite_works" style="visibility:hidden">----\n<br>**アダルトサイト\n<br></div>';
+        var exbroadcastdiv = '<div id="exbroadcast_works" style="visibility:hidden">----\n<br>**その他作品(配信系)\n<br></div>';
+        // カリビアンコムと一本道の場合は「その他作品(配信系)」のみ
+        if(url.indexOf(baseurl_carib) != -1 || url.indexOf(baseurl_pondotv) != -1)
+        {
+          $("body").find("div#dmm2ssw").append(exbroadcastdiv);
+        }
+        // MGSとPerfect-Gと舞ワイフの場合は「アダルトサイト」のみ
+        else if(url.indexOf(baseurl_mgs) != -1 || url.indexOf(baseurl_perfectg) != -1 || url.indexOf(baseurl_mywife) != -1 || url.indexOf(baseurl_realfile) != -1)
+        {
+          $("body").find("div#dmm2ssw").append(adultsitediv);
+        }
+        // FANZAの場合
+        else if(url.indexOf(baseurl_dmm) != -1)
+        {
+          $("body").find("div#dmm2ssw").append(basicdiv);
+          $("body").find("div#dmm2ssw").append(vrdiv);
+          $("body").find("div#dmm2ssw").append(ivdiv);
+          $("body").find("div#dmm2ssw").append(omnidiv);
+          $("body").find("div#dmm2ssw").append(adultsitediv);
+        }
       }
       // FANZAの場合
       if (url.indexOf(baseurl_dmm) != -1) {
         // detail
         if (url.indexOf(url_details) != -1) {
-          self = true;
-          console.log("send message: to_parse");
-          chrome.runtime.sendMessage({
-            type: "to_parse",
-            url: url,
-            link: url,
-            output: output,
-            is_search_wiki: is_search_wiki
-          });
+          send_to_parse();
+          return true;
         }
-        // list
-        else if (url.indexOf(url_list) != -1) {
-          // actress
-          if (url.indexOf(url_actress) != -1) {}
-        // label
-          else if (url.indexOf(url_label) != -1) {}
-          else {}
+        // list search
+        else if (url.indexOf(url_list) != -1 || url.indexOf(url_search) != -1) {
           $("p.tmb").each(function () {
             var href = $(this).find("a").attr("href");
             console.log(href);
@@ -146,15 +233,8 @@
         // detail
         if(url.indexOf(mgsurl_detail) != -1)
         {
-          self = true;
-          console.log("send message: to_parse");
-          chrome.runtime.sendMessage({
-            type: "to_parse",
-            url: url,
-            link: url,
-            output: output,
-            is_search_wiki: is_search_wiki
-          });
+          send_to_parse();
+          return true;
         }
         // list
         else if(url.indexOf(mgsurl_search) != -1)
@@ -176,14 +256,116 @@
           });
         }
       }
+      // Perfect-Gの場合
+      else if(url.indexOf(baseurl_perfectg) != -1)
+      {
+        // 女優まとめページのみ対応
+        if(output == "actress")
+        {
+          // 個別ページのみ対応
+          if(url.indexOf(perfectgurl_detail) != -1)
+          {
+            is_search_release_with_wiki = true;
+            send_to_parse();
+            return true;
+          }
+        }
+      }
+      // 舞ワイフの場合
+      else if(url.indexOf(baseurl_mywife) != -1)
+      {
+        // 女優まとめページのみ対応
+        if(output == "actress")
+        {
+          // 個別ページのみ対応
+          if(url.indexOf(mywifeurl_detail) != -1)
+          {
+            is_search_release_with_wiki = true;
+            send_to_parse();
+            return true;
+          }
+        }
+      }
+      // RealFileの場合
+      else if(url.indexOf(baseurl_realfile) != -1)
+      {
+        // 女優まとめページのみ対応
+        if(output == "actress")
+        {
+          // 個別ページのみ対応
+          if(url.indexOf(realfileurl_teigaku_detail) != -1 || url.indexOf(realfileurl_tanpin_detail) != -1)
+          {
+            is_search_release_with_wiki = true;
+            send_to_parse();
+            return true;
+          }
+        }
+      }
+      // カリビアンコムの場合
+      else if(url.indexOf(baseurl_carib) != -1)
+      {
+        // 女優まとめページのみ対応
+        if(output == "actress")
+        {
+          // detail
+          if(url.indexOf(cariburl_detail) != -1)
+          {
+            send_to_parse();
+            return true;
+          }
+          // list search searchact
+          else if(url.indexOf(cariburl_list) != -1 || url.indexOf(cariburl_search) != -1 || url.indexOf(cariburl_searchact) != -1)
+          {
+            $("div.grid-item").find("div.meta-title").each( function() {
+              var href = $(this).children("a").attr("href");
+              if(href.indexOf(cariburl_detail) != -1)
+              {
+                href = "https://www.caribbeancom.com" + href;
+                link_list.push(href);
+              }
+            });
+          }
+        }
+      }
+      // 一本道の場合
+      else if(url.indexOf(baseurl_pondotv) != -1)
+      {
+        // 女優まとめページのみ対応
+        if(output == "actress")
+        {
+          // detail
+          if(url.indexOf(pondotvurl_detail) != -1)
+          {
+            send_to_parse();
+            return true;
+          }
+          // list search
+          else if(url.indexOf(pondotvurl_list) != -1 || url.indexOf(pondotvurl_search) != -1)
+          {
+            $("div.grid-item").find("a.entry").each( function() {
+              var href = $(this).attr("href");
+              if(href.indexOf(pondotvurl_detail) != -1)
+              {
+                href = "https://www.1pondo.tv" + href;
+                link_list.push(href);
+              }
+            });
+          }
+        }
+      }
       open_next_tab();
       return true;
     }
     // 作品ページを解析
     else if (msg.type == "parse_detail") {
       url = msg.url;
+      console.log("url: " + url);
       output = msg.output;
       is_search_wiki = msg.is_search_wiki;
+      is_search_release_with_wiki = msg.is_search_release_with_wiki;
+      wiki_label = "";
+      wiki_series = "";
+      // FANZAの場合
       if (url.indexOf(baseurl_dmm) != -1) {
         var cutoff = url.indexOf("?");
         if (cutoff != -1) {
@@ -214,7 +396,7 @@
         console.log("title: " + title);
         // アダルトサイトチェック
         is_adultsite = false;
-        if (url.indexOf("videoc") != -1) {
+        if (url.indexOf("videoc") != -1 || url.indexOf("videoa") != -1) {
           is_adultsite = true;
         }
         for (var i = 0; i < msg._OMITWORDS.length; i += 2) {
@@ -404,72 +586,7 @@
                        label = maker;
                     }
                     var suburl = "";
-                    console.log("is_search_wiki:" + is_search_wiki);
-                    if (is_search_wiki && output == "actress") {
-                      var suburl = url;
-                      var pos = suburl.indexOf("dmm.co.jp");
-                      if (pos != -1) {
-                        suburl = suburl.substr(pos);
-                      }
-                      suburl = "http://sougouwiki.com/search?keywords=" + suburl;
-                      console.log("send message: open_next_wiki");
-                      chrome.runtime.sendMessage({
-                        type: "open_next_wiki",
-                        url: url,
-                        link: suburl,
-                        label: label,
-                        maker: maker,
-                        series: series,
-                        prefix: prefix,
-                        output: output,
-                        is_search_wiki: is_search_wiki
-                      }, function (response) {
-                        if (response.close && !self) {
-                          window.close();
-                        }
-                        console.log("response received");
-                      });
-                    } else {
-                      console.log("send message: send_detail");
-                      chrome.runtime.sendMessage({
-                        type: "send_detail",
-                        url: url,
-                        title: title,
-                        cast: cast,
-                        anothername: anothername,
-                        threesize: threesize,
-                        director: director,
-                        label: label,
-                        maker: maker,
-                        series: series,
-                        wiki_label: "",
-                        wiki_series: "",
-                        hinban: hinban,
-                        prefix: prefix,
-                        number: number,
-                        smallimg: smallimg,
-                        largeimg: largeimg,
-                        release: release,
-                        broadcast_release: broadcast_release,
-                        duration: duration,
-                        genre: genre,
-                        service: service,
-                        is_omnibus: is_omnibus,
-                        is_iv: is_iv,
-                        is_vr: is_vr,
-                        is_adultsite: is_adultsite,
-                        is_limited: is_limited,
-                        is_dod: is_dod,
-                        output: output,
-                        is_search_wiki: is_search_wiki,
-                        is_title_fixed: is_title_fixed
-                      }, function (response) {
-                        if (!self) {
-                          window.close();
-                        }
-                        console.log("response received");
-                      });
-                    }
+                    send_detail_message(is_search_wiki, baseurl_dmm);
                   }
                 });
               } else {
@@ -498,6 +615,11 @@
               hinban = $(this).next().text();
               if (hinban.length - 2 == hinban.lastIndexOf("so")) {
                 hinban = hinban.substr(0, hinban.length - 2);
+              }
+              // 青空ソフトの場合、一旦最後のZを取る
+              if(hinban.indexOf("aoz") != -1)
+              {
+                hinban = hinban.substr(0, hinban.length - 1);
               }
               hinban = hinban.replace('\n', '').toUpperCase();
               var numb = 0;
@@ -530,6 +652,11 @@
                 prefix = prefix.replace(/H_/, '');
                 prefix = prefix.replace(/[0-9]/g, '');
               }
+              // 青空ソフトの場合、最後にZを足す
+              if(prefix == "AOZ")
+              {
+                latterhalf = latterhalf + "Z";
+              }
               hinban = prefix + "-" + latterhalf;
               number = parseInt(latterhalf);
               console.log("hinban: " + hinban);
@@ -550,81 +677,18 @@
           {
             cast = cast.substr(0, cast.indexOf("（")) + cast.substr(cast.indexOf("）") + 1);
           }
-          console.log("is_search_wiki:" + is_search_wiki);
-          if (is_search_wiki && output == "actress") {
-            var suburl = url;
-            var pos = suburl.indexOf("dmm.co.jp");
-            if (pos != -1) {
-              suburl = suburl.substr(pos);
-            }
-            suburl = "http://sougouwiki.com/search?keywords=" + suburl;
-            console.log("send message: open_next_wiki");
-            chrome.runtime.sendMessage({
-              type: "open_next_wiki",
-              url: url,
-              link: suburl,
-              label: label,
-              maker: maker,
-              series: series,
-              prefix: prefix,
-              output: output,
-              is_search_wiki: is_search_wiki
-            }, function (response) {
-              if (response.close && !self) {
-                window.close();
-              }
-              console.log("response received");
-            });
-          } else {
-            console.log("send message: send_detail");
-            chrome.runtime.sendMessage({
-              type: "send_detail",
-              url: url,
-              title: title,
-              cast: cast,
-              anothername: anothername,
-              threesize: threesize,
-              director: director,
-              label: label,
-              maker: maker,
-              series: series,
-              wiki_label: "",
-              wiki_series: "",
-              hinban: hinban,
-              prefix: prefix,
-              number: number,
-              smallimg: smallimg,
-              largeimg: largeimg,
-              release: release,
-              broadcast_release: broadcast_release,
-              duration: duration,
-              genre: genre,
-              service: service,
-              is_omnibus: is_omnibus,
-              is_iv: is_iv,
-              is_vr: is_vr,
-              is_adultsite: is_adultsite,
-              is_limited: is_limited,
-              is_dod: is_dod,
-              output: output,
-              is_search_wiki: is_search_wiki,
-              is_title_fixed: is_title_fixed
-            }, function (response) {
-              if (!self) {
-                window.close();
-              }
-              console.log("response received");
-            });
-          }
+          send_detail_message(is_search_wiki, baseurl_dmm);
         }
       }
-      else if(url.indexOf(baseurl_mgs) != 1)
+      // MGSの場合
+      else if(url.indexOf(baseurl_mgs) != -1)
       {
         title = $("title").text();
         title = title.substr(title.indexOf("「") + 1);
         title = title.substr(0, title.indexOf("」"));
         console.log("title: " + title);
         is_adultsite = true;
+        is_exbroadcast = false;
         is_omnibus = false;
         smallimg = $("img.enlarge_image").attr("src");
         // 画像が大きい場合は小さいものに差し替え
@@ -660,7 +724,10 @@
             hinban = $(this).next().text();
             console.log("hinban: " + duration);
             prefix = hinban.substr(0, hinban.indexOf("-"));
+            var latterhalf = hinban.substr(hinban.indexOf("-") + 1);
+            number = parseInt(latterhalf);
             console.log("prefix: " + prefix);
+            console.log("number: " + number);
           }
           else if(text.indexOf("配信開始日") != -1)
           {
@@ -704,8 +771,6 @@
 //            console.log("uni:" + genre.codePointAt(0).toString(16));
             is_vr = false;
             is_iv = false;
-            is_limited = false;
-            is_dod = false;
             if(genre.indexOf("VR") != -1)
             {
               is_vr = true;
@@ -722,114 +787,396 @@
         threesize = "";
         director = "";
         service = "";
-        console.log("is_search_wiki:" + is_search_wiki);
-        if (is_search_wiki && output == "actress") {
-          var suburl = url;
-          var pos = suburl.indexOf(baseurl_mgs);
-          if (pos != -1) {
-            suburl = suburl.substr(pos);
+        is_limited = false;
+        is_dod = false;
+        is_title_fixed = false;
+        send_detail_message(is_search_wiki, baseurl_mgs);
+      }
+      // Perfect-Gの場合
+      else if(url.indexOf(baseurl_perfectg) != -1)
+      {
+        var age = 0;
+        $("div.prof_dat").children("div").each( function() {
+          var classname = $(this).attr("class");
+          if(classname == "p_name")
+          {
+            title = $(this).text();
+            title = title.substr(0, title.indexOf("-"));
+            title = title.replace(/\u0020/g, "");
+            hinban = title;
+            number = parseInt(title.substr(0, title.search(/[a-z]/)));
+            console.log("title: " + title);
+            console.log("number: " + number);
+            prefix = title.replace(/[0-9]/g, "");
+            anothername = $(this).children("span").text();
+            anothername = anothername.replace(/-/g, "");
+            console.log("anothername: " + anothername);
           }
-          suburl = "http://sougouwiki.com/search?keywords=" + suburl;
-          console.log("send message: open_next_wiki");
-          chrome.runtime.sendMessage({
-            type: "open_next_wiki",
-            url: url,
-            link: suburl,
-            label: label,
-            maker: maker,
-            series: series,
-            prefix: prefix,
-            output: output,
-            is_search_wiki: is_search_wiki
-          }, function (response) {
-            if (response.close && !self) {
-              window.close();
+          else if(classname == "p_age")
+          {
+            var agetext = $(this).text();
+            var ageremove = $(this).children("span").text();
+            agetext = agetext.replace(ageremove, "");
+            age = parseInt(agetext);
+            console.log("agetext: " + agetext);
+            console.log("age: " + age);
+          }
+          else if(classname == "p_prf")
+          {
+            threesize = $(this).text();
+            var threesizeremove = $(this).children("span").text();
+            threesize = threesize.replace(threesizeremove, "");
+            console.log("3size: " + threesize);
+          }
+          else if(classname == "p_mov")
+          {
+            var dlist = $(this).text();
+            var dlistremove = $(this).children("span").text();
+            dlist = dlist.replace(dlistremove, "");
+            dlist = dlist.replace("全", "");
+            dlist = dlist.replace("分", ":");
+            dlist = dlist.replace("秒", "");
+            dlist = dlist.split(":");
+            console.log("dlist: " + dlist);
+            duration = 0;
+            for(var i = 0; i < dlist.length; i++)
+            {
+              if(i == 0)
+              {
+                duration += parseInt(dlist[i]);
+              }
+              else if(i == 1)
+              {
+                // 秒数は四捨五入
+                if(parseInt(dlist[i]) >= 30)
+                {
+                  duration += 1;
+                }
+              }
             }
-            console.log("response received");
-          });
-        } else {
-          console.log("send message: send_detail");
-          chrome.runtime.sendMessage({
-            type: "send_detail",
-            url: url,
-            title: title,
-            cast: cast,
-            anothername: anothername,
-            threesize: threesize,
-            director: director,
-            label: label,
-            maker: maker,
-            series: series,
-            wiki_label: "",
-            wiki_series: "",
-            hinban: hinban,
-            prefix: prefix,
-            smallimg: smallimg,
-            largeimg: largeimg,
-            release: release,
-            broadcast_release: broadcast_release,
-            duration: duration,
-            genre: genre,
-            service: service,
-            is_omnibus: is_omnibus,
-            is_iv: is_iv,
-            is_vr: is_vr,
-            is_adultsite: is_adultsite,
-            is_limited: is_limited,
-            is_dod: is_dod,
-            output: output,
-            is_search_wiki: is_search_wiki,
-            is_title_fixed: is_title_fixed
-          }, function (response) {
-            if (!self) {
-              window.close();
-            }
-            console.log("response received");
-          });
+            console.log("duration: " + duration);
+          }
+        });
+        anothername += " " + age + "歳 " + threesize;
+        smallimg = "http://www.g-area.com/pg_info_thumb/pg_info_" + prefix + "150_100.jpg";
+        largeimg = "http://www.g-area.com/img/main/" + prefix + "_320_180.jpg";
+        label = "Perfect-G";
+        maker = "";
+        series = "";
+        genre = "";
+        is_adultsite = true;
+        is_exbroadcast = false;
+        is_omnibus = false;
+        is_iv = false;
+        is_vr = false;
+        cast = "";
+        send_detail_message(is_search_wiki, baseurl_mgs);
+      }
+      // 舞ワイフの場合
+      else if(url.indexOf(baseurl_mywife) != -1)
+      {
+        title = $("div.modelwaku").first().find("img").attr("alt");
+        title = title.replace(" ", "");
+        console.log("title: " + title);
+        var numbertext = $("div.modelsample_photowaku").first().find("img").attr("src");
+        if(numbertext.indexOf("girl/") != -1 && numbertext.indexOf("/01.jpg") != -1)
+        {
+          numbertext = numbertext.substr(numbertext.indexOf("girl/") + 5);
+          numbertext = numbertext.substr(0, numbertext.indexOf("/01.jpg"));
+          number = parseInt(numbertext);
+          console.log("number: " + number);
         }
+        anothername = title;
+        var text = $("div.modelsamplephototop").first().text();
+        if(text.indexOf("年齢") != -1 && text.indexOf("歳") != -1)
+        {
+          var agetext = text.substr(text.indexOf("年齢") + 3);
+          var agetext = agetext.substr(0, agetext.indexOf("歳"));
+          var age = parseInt(agetext);
+          if(age > 0)
+          {
+            anothername += " " + String(age) + "歳";
+          }
+        }
+        
+        if(text.indexOf("T:") != -1 && text.indexOf("【出演理由】") != -1)
+        {
+          threesize = text.substr(text.indexOf("T:"));
+          threesize = threesize.substr(0, threesize.indexOf("【出演理由】") - 1);
+          threesize = threesize.replace(/\u0020/g, "");
+          anothername += " " + threesize;
+          console.log("3size: " + threesize);
+        }
+        console.log("anothername: " + anothername);
+        
+        var num = parseInt(url.substr(url.lastIndexOf("/") + 1));
+        
+        
+        largeimg = "http://p02.mywife.cc/girl/0" + num + "/thumb.jpg";
+        smallimg = "&ref(" + largeimg + ", 147)";
+        
+        label = "舞ワイフ";
+        maker = "";
+        series = "";
+        genre = "";
+        is_adultsite = true;
+        is_exbroadcast = false;
+        is_omnibus = false;
+        is_iv = false;
+        is_vr = false;
+        cast = "";
+        duration = 0;
+        send_detail_message(is_search_wiki, baseurl_mywife);
+      }
+      // RealFileの場合
+      else if(url.indexOf(baseurl_realfile) != -1)
+      {
+        var text = $("div#gallery_girl_profile").find("p").text();
+        text = text.replace(/\u0020/g, "");
+        text = text.replace(/\u3000/g, "");
+        text = text.replace(/\u0009/g, "");
+        text = text.replace(/\u000a/g, ",");
+        if(text.indexOf("名前") != -1)
+        {
+          title = text.substr(text.indexOf("名前") + 3);
+          title = title.substr(title.indexOf(","));
+          console.log("title: " + title);
+          anothername = title;
+        }
+        
+        if(text.indexOf("年齢") != -1)
+        {
+          var agetext = text.substr(text.indexOf("年齢") + 3);
+          agetext = agetext.substr(agetext.indexOf(","));
+          age = parseInt(agetext);
+          if(age > 0)
+          {
+            console.log("age: " + age);
+            anothername += " " + age + "歳";
+          }
+        }
+        var tall = "";
+        if(text.indexOf("身長") != -1)
+        {
+          tall = text.substr(text.indexOf("身長") + 3);
+          tall = tall.substr(tall.indexOf(","));
+          tall = "T" + tall;
+          console.log("tall: " + tall);
+        }
+        if(text.indexOf("サイズ") != -1)
+        {
+          threesize = text.substr(text.indexOf("サイズ") + 4);
+          threesize = threesize.substr(threesize.indexOf(","));
+          if(tall.length > 0)
+          {
+           threesize = tall + threesize;
+          }
+          console.log("3size: " + threesize);
+          anothername += " " + threesize;
+        }
+        console.log("anothername: " + anothername);
+        
+        largeimg = "http://p02.mywife.cc/girl/0" + num + "/thumb.jpg";
+        smallimg = "&ref(" + largeimg + ", 147)";
+        
+        label = "舞ワイフ";
+        maker = "";
+        series = "";
+        genre = "";
+        is_adultsite = true;
+        is_exbroadcast = false;
+        is_omnibus = false;
+        is_iv = false;
+        is_vr = false;
+        cast = "";
+        duration = 0;
+        send_detail_message(is_search_wiki, baseurl_mywife);
+
+      }
+      // カリビアンコムの場合
+      else if(url.indexOf(baseurl_carib) != -1)
+      {
+        $("h1").each( function() {
+          if($(this).attr("itemprop") == "name")
+          {
+            title = $(this).text();
+          }
+        });
+        console.log("title: " + title);
+        is_adultsite = false;
+        is_exbroadcast = true;
+        is_omnibus = false;
+        is_iv = false;
+        is_vr = false;
+        if($("div.movie-tag").find("div.is-vr").length > 0)
+        {
+          is_vr = true;
+        }
+        
+        largeimg = url.replace("index.html", "l_l.jpg");
+        smallimg = "&ref(" + largeimg + ",200)";
+        
+        $("li.movie-spec").each( function() {
+          var text = $(this).children("span.spec-title").text();
+          if(text.indexOf("出演") != -1)
+          {
+            cast = $(this).children("span.spec-content").text();
+            cast = cast.replace(/\u0009/g, "");
+            cast = cast.replace(/\u000a/g, "]]／[[");
+            cast = "[[" + cast + "]]";
+            cast = cast.replace("[[]]／[[", "[[");
+            cast = cast.replace("]]／[[]]", "]]");
+            console.log("cast: " + cast);
+          }
+          else if(text.indexOf("配信日") != -1)
+          {
+            release = $(this).children("span.spec-content").text();
+            broadcast_release = release;
+            console.log("release: " + release);
+          }
+          else if(text.indexOf("再生時間") != -1)
+          {
+            var dlist = $(this).children("span.spec-content").text();
+            dlist = dlist.split(":");
+            duration = 0;
+            for(var i = 0; i < dlist.length; i++)
+            {
+              var num = parseInt(dlist[i]);
+              if(i == 0)
+              {
+                duration += num * 60;
+              }
+              else if(i == 1)
+              {
+                duration += num;
+              }
+              else if(i == 2)
+              {
+                // 秒数は四捨五入
+                if(num >= 30)
+                {
+                  duration += 1;
+                }
+              }
+            }
+            console.log("duration: " + duration);
+          }
+          else if(text.indexOf("シリーズ") != -1)
+          {
+            series = $(this).children("span.spec-content").text();
+            console.log("series: " + series);
+          }
+          else if(text.indexOf("タグ") != -1)
+          {
+            genre = $(this).children("span.spec-content").text();
+            genre = genre.replace(/\u000a/g, "");
+            genre = genre.replace(/\u0009/g, ",");
+            genre = genre.replace(/,+/g, ",");
+            if (genre.indexOf(",") == 0) {
+              genre = genre.substr(1);
+            }
+            if (genre.lastIndexOf(",") == genre.length - 1) {
+              genre = genre.substr(0, genre.length - 1);
+            }
+//            console.log("uni:" + genre.codePointAt(0).toString(16));
+            if(genre.indexOf("ベスト/オムニバス") != -1)
+            {
+              is_omnibus = true;
+            }
+            genre = genre.split(",");
+            console.log("genre: " + genre);
+          }
+        });
+        var suburl = "";
+        label = "カリビアンコム";
+        maker = "カリビアンコム";
+        threesize = "";
+        director = "";
+        service = "";
+        hinban = "";
+        prefix = "";
+        number = 0;
+        anothername = "";
+        is_limited = false;
+        is_dod = false;
+        is_title_fixed = false;
+        // カリビアンコムの場合はwikiを探さない
+        send_detail_message(false, baseurl_carib);
+      }
+      // 一本道の場合
+      else if(url.indexOf(baseurl_pondotv) != -1)
+      {
+        var movie_id = url.replace("https://www.1pondo.tv/movies/", "");
+        movie_id = movie_id.replace("/", "");
+        var ajax_url = "https://www.1pondo.tv/dyn/phpauto/movie_details/movie_id/" + movie_id + ".json";
+        $.ajax({
+          type: "GET",
+          url: ajax_url,
+          success: function (msg) {
+            console.log(msg);
+            title = msg.Title;
+            console.log("title: " + title);
+            cast = "[[";
+            for(var i = 0; i < msg.ActressesJa.length; i++)
+            {
+              if(i != 0)
+              {
+                cast += "]]／[[";
+              }
+              cast += msg.ActressesJa[i];
+            }
+            cast += "]]";
+            console.log("cast: " + cast);
+            
+            duration = Math.round(msg.Duration / 60);
+            console.log("duration: " + duration);
+            smallimg = msg.MovieThumb;
+            largeimg = msg.ThumbHigh;
+            release = msg.Release;
+            release = release.replace(/-/g, "/");
+            broadcast_release = release;
+            console.log("release: " + release);
+            series = msg.Series;
+            console.log("series: " + series);
+            maker = "一本道";
+            label = maker;
+            genre = msg.UCNAME;
+            console.log("genre: " + genre);
+            threesize = "";
+            director = "";
+            service = "";
+            hinban = "";
+            prefix = "";
+            number = 0;
+            anothername = "";
+            is_omnibus = false;
+            is_iv = false;
+            is_vr = false;
+            is_limited = false;
+            is_dod = false;
+            is_adultsite = false;
+            is_exbroadcast = true;
+            is_title_fixed = false;
+            send_detail_message(false, baseurl_pondotv);
+          }
+        });
       }
       return true;
     }
     // レーベル・シリーズが判明済
     else if (msg.type == "found_page_list") {
-      console.log("send message: send_detail");
-      chrome.runtime.sendMessage({
-        type: "send_detail",
-        url: url,
-        title: title,
-        cast: cast,
-        anothername: anothername,
-        threesize: threesize,
-        director: director,
-        label: label,
-        maker: maker,
-        series: series,
-        wiki_label: msg.label,
-        wiki_series: msg.series,
-        hinban: hinban,
-        prefix: prefix,
-        smallimg: smallimg,
-        largeimg: largeimg,
-        release: release,
-        broadcast_release: broadcast_release,
-        duration: duration,
-        genre: genre,
-        service: service,
-        is_omnibus: is_omnibus,
-        is_iv: is_iv,
-        is_vr: is_vr,
-        is_adultsite: is_adultsite,
-        is_limited: is_limited,
-        is_dod: is_dod,
-        output: output,
-        is_search_wiki: is_search_wiki,
-        is_title_fixed: is_title_fixed
-      }, function (response) {
-        if (!self) {
-          window.close();
-        }
-        console.log("response received");
-      });
+      if(msg.release.length > 0)
+      {
+        release = msg.release;
+      }
+      if(msg.cast.length > 0)
+      {
+        cast = msg.cast;
+      }
+      wiki_label = msg.wiki_label;
+      wiki_series = msg.wiki_series;
+      console.log("wiki label: " + wiki_label);
+      send_detail_message(false, "");
       return true;
     // 次の作品を開く
     } else if (msg.type == "next_tab") {
@@ -858,23 +1205,22 @@
       }
       // 女優まとめページ用出力
       if (output == "actress") {
-        var wiki_label = "";
-        var wiki_series = "";
+        console.log("msg.wiki_label: " + msg.wiki_label);
+        console.log("msg.wiki_series: " + msg.wiki_series);
         if (msg.wiki_label.length > 0) {
           wiki_label = "　[[(レーベル一覧)>" + msg.wiki_label + "]]";
-        } else if (msg.wiki_series.length > 0) {
+        }
+        if (msg.wiki_series.length > 0) {
           wiki_series = "　[[(シリーズ一覧)>" + msg.wiki_series + "]]";
         }
         var cast_list = "";
         if (msg.cast.indexOf("／") != -1) {
-          cast_list = "出演者：" + msg.cast + "<br>";
+          cast_list = "出演者：" + msg.cast + "\n<br>";
         }
         matomerelease = matomerelease.replace(/\u002f/g, '.');
-        if (url.indexOf(baseurl_dmm) != -1 && msg.is_adultsite) {
-          matometitle = msg.anothername + " " + msg.threesize;
-        }
-                                       
+        
         var matomelabel = "";
+        var matomehinban = " " + msg.hinban;
         if(msg.label == "")
         {
           if(msg.maker == "")
@@ -883,15 +1229,61 @@
           }
           else
           {
-            matomelabel = "（" + msg.maker + "）";
+            matomelabel = msg.maker;
           }
         }
         else if(msg.label != "----")
         {
-          matomelabel = "（" + msg.label + "）";
+          matomelabel = msg.label;
         }
-        var joyumatome = "//" + matomerelease + " " + msg.hinban + "<br>" + "[[" + matometitle + matomelabel + ">" + msg.url + "]]" + wiki_label + wiki_series + "<br>" + "[[" + msg.smallimg + ">" + msg.largeimg + "]]" + "<br>" + cast_list + "\n<br>";
-        if (msg.is_omnibus) {
+        // FANZAの素人動画の場合
+        if (msg.url.indexOf("videoc") != -1 && msg.is_adultsite) {
+          if(matomelabel.length > 0)
+          {
+            matomelabel += " ";
+          }
+          // タイトルに「レーベル名 名前 スリーサイズ」を表記
+          matometitle = matomelabel +  msg.anothername + " " + msg.threesize;
+          matomelabel = "";
+        }
+        // MGSの場合
+        else if(msg.url.indexOf(baseurl_mgs) != -1)
+        {
+          // タイトルに「MGS タイトル 名義」を表記
+          matometitle = "MGS " + matometitle + anothername;
+        }
+        // Perfect-Gの場合
+        else if(msg.url.indexOf(baseurl_perfectg) != -1)
+        {
+          matometitle = "G-AREA Perfect-G " + anothername;
+          matomelabel = "";
+          matomehinban = "";
+          cast_list = "<font color='red'>女優名：" + cast + "</font>";
+        }
+        // 舞ワイフの場合
+        else if(msg.url.indexOf(baseurl_mywife) != -1)
+        {
+          matometitle = "舞ワイフ No." + number + " " + anothername;
+          matomelabel = "";
+          matomehinban = "";
+          cast_list = "<font color='red'>女優名：" + cast + "</font>";
+        }
+        
+        if(matomelabel.length > 0)
+        {
+          matomelabel = "（" + matomelabel + "）";
+        }
+        
+        var joyumatome = "//" + matomerelease + matomehinban + "\n<br>" + "[[" + matometitle + matomelabel + ">" + msg.url + "]]" + wiki_label + wiki_series + "\n<br>" + "[[" + msg.smallimg + ">" + msg.largeimg + "]]" + "\n<br>" + cast_list + "\n<br>";
+        // アダルトサイトと配信系は、総集編／VR／IV／であっても、それぞれのカテゴリに表示
+        if (msg.is_adultsite) {
+          $("body").find("div#adultsite_works").attr("style", "visibility:visible");
+          $("body").find("div#adultsite_works").append(joyumatome);
+        } else if (msg.is_exbroadcast) {
+          joyumatome = "//" + matomerelease + "\n<br>" + "[[" + matometitle + matomelabel + ">" + msg.url + "]]" + "\n<br>" + cast_list;
+          $("body").find("div#exbroadcast_works").attr("style", "visibility:visible");
+          $("body").find("div#exbroadcast_works").append(joyumatome);
+        } else if (msg.is_omnibus) {
           $("body").find("div#omni_works").attr("style", "visibility:visible");
           $("body").find("div#omni_works").append(joyumatome);
         } else if (msg.is_iv) {
@@ -900,9 +1292,6 @@
         } else if (msg.is_vr) {
           $("body").find("div#vr_works").attr("style", "visibility:visible");
           $("body").find("div#vr_works").append(joyumatome);
-        } else if (msg.is_adultsite) {
-          $("body").find("div#adultsite_works").attr("style", "visibility:visible");
-          $("body").find("div#adultsite_works").append(joyumatome);
         } else {
           $("body").find("div#basic_works").append(joyumatome);
         }
@@ -1010,7 +1399,8 @@
         url: url,
         link: link_list[0],
         output: output,
-        is_search_wiki: is_search_wiki
+        is_search_wiki: is_search_wiki,
+        is_search_release_with_wiki: is_search_release_with_wiki
       });
       link_list.splice(0, 1);
     }
@@ -1027,6 +1417,7 @@
     is_ignore_limited = false;
     is_ignore_dod = false;
     is_search_wiki = false;
+    is_search_release_with_wiki = false;
     is_first_product = false;
     title = "";
     service = "";
@@ -1045,15 +1436,102 @@
     prefix = "";
     number = 0;
     sougouwikipage = "";
+    wiki_label = "";
+    wiki_series = "";
     smallimg = "";
     largeimg = "";
     is_omnibus = false;
     is_iv = false;
     is_vr = false;
     is_adultsite = false;
+    is_exbroadcast = false;
     is_limited = false;
     is_dod = false;
     is_title_fixed = false;
     title_list = [];
+  };
+ 
+  send_to_parse = function() {
+    self = true;
+    console.log("send message: to_parse");
+    chrome.runtime.sendMessage({
+      type: "to_parse",
+      url: url,
+      link: url,
+      output: output,
+      is_search_wiki: is_search_wiki,
+      is_search_release_with_wiki: is_search_release_with_wiki
+    });
+  };
+ 
+  send_detail_message = function(send_wiki, searchurl) {
+    console.log("is_search_wiki:" + send_wiki);
+    if (send_wiki && output == "actress") {
+      var suburl = url;
+      var pos = suburl.indexOf(searchurl);
+      if (pos != -1) {
+        suburl = suburl.substr(pos);
+      }
+      console.log("send message: open_next_wiki");
+      chrome.runtime.sendMessage({
+        type: "open_next_wiki",
+        url: url,
+        link: suburl,
+        label: label,
+        maker: maker,
+        series: series,
+        prefix: prefix,
+        output: output,
+        is_search_wiki: is_search_wiki,
+        is_search_release_with_wiki: is_search_release_with_wiki
+      }, function (response) {
+        if (response.close && !self) {
+          window.close();
+        }
+        console.log("response received");
+      });
+    } else {
+      console.log("send message: send_detail");
+      console.log("send wiki label: " + wiki_label);
+      chrome.runtime.sendMessage({
+        type: "send_detail",
+        url: url,
+        title: title,
+        cast: cast,
+        anothername: anothername,
+        threesize: threesize,
+        director: director,
+        label: label,
+        maker: maker,
+        series: series,
+        wiki_label: wiki_label,
+        wiki_series: wiki_series,
+        hinban: hinban,
+        prefix: prefix,
+        smallimg: smallimg,
+        largeimg: largeimg,
+        release: release,
+        broadcast_release: broadcast_release,
+        duration: duration,
+        genre: genre,
+        service: service,
+        is_omnibus: is_omnibus,
+        is_iv: is_iv,
+        is_vr: is_vr,
+        is_adultsite: is_adultsite,
+        is_exbroadcast: is_exbroadcast,
+        is_limited: is_limited,
+        is_dod: is_dod,
+        output: output,
+        is_search_wiki: is_search_wiki,
+        is_search_release_with_wiki: is_search_release_with_wiki,
+        is_title_fixed: is_title_fixed
+      }, function (response) {
+        if (!self) {
+          window.close();
+        }
+        console.log("response received");
+      });
+    }
   };
 }).call(this);

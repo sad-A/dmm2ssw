@@ -7,6 +7,8 @@
   var detail_info = {};
   var wiki_msg = {};
   var result;
+  var is_search_wiki;
+  var is_search_release_with_wiki;
   var output;
   var valnames = ["_IGNORE_PERFORMERS", "_FORCE_CHK_SALE_SR", "_FORCE_CHK_SALE_MK", "_RENTAL_PRECEDES", "_HIDE_NAMES", "_GENRE_LIMITED", "_GENRE_DOD", "_GENRE_BD", "_GENRE_VR", "_GENRE_IV", "_GENRE_OMNI", "_OMIT_LABEL", "_OMIT_SERIES", "_OMIT_SUSS_4H", "_OMNI_PREFIX", "_OMITWORDS", "_ROOKIES", "_IV_PREFIX", "_REDIRECTS", "_NUMBERS_IN_PREFIX", "_CENSORED_WORDS"];
   var vals = {};
@@ -34,7 +36,7 @@
 
   function searchSougouWiki(sender, url) {
     var x = new XMLHttpRequest();
-    x.open('GET', url);
+    x.open('GET', "http://sougouwiki.com/search?keywords=" + url);
     x.onload = function () {
       var html = $.parseHTML(x.response);
       var result = 0;
@@ -47,7 +49,7 @@
           $(html).find("div.result-box p.title strong").each(function () {
             var text = $(this).text();
             console.log("text: " + text);
-            if (text.indexOf("dmm.co.jp") != -1) {} else {
+            if (text.indexOf(url) != -1) {} else {
               result = parseInt(text, 10);
             }
           });
@@ -55,56 +57,94 @@
       }
       console.log("result: " + result);
       var found = false;
-      var label_list = "";
-      var series_list = "";
+      var wiki_label = "";
+      var wiki_series = "";
+      var start_searching_release = false;
       if (result == 0) {
         chrome.tabs.sendMessage(sender.tab.id, {
           type: "found_page_list",
-          label: label_list,
-          series: series_list
+          wiki_label: wiki_label,
+          wiki_series: wiki_series,
+          release: "",
+          cast: ""
         });
         return;
       }
-      console.log("wiki_msg: " + wiki_msg.label);
       $(html).find("h3.keyword").each(function () {
         var text = $(this).text();
         console.log("text: " + text);
         text = text.replace(/\r?\n/g, '');
         if (text.length > 0) {
-          console.log("found_label: " + text);
           // ページ名にレーベル名を含む場合はレーベルリストへ
-          if (wiki_msg.label != "----" && text.indexOf(wiki_msg.label) != -1) {
-            label_list = text;
+          if (wiki_msg.label.length > 0 && wiki_msg.label != "----" && text.indexOf(wiki_msg.label) != -1) {
+            wiki_label = text;
             found = true;
-            console.log("is include label");
+            console.log("is include label: " + wiki_label);
+            // 日付を調べる場合
+            if(is_search_release_with_wiki && !start_searching_release)
+            {
+              start_searching_release = true;
+              var findurl = $(this).find("a").attr("href");
+              console.log("let's find the release on " + findurl);
+              find_release_with_wiki(sender, findurl, url, wiki_label, wiki_series);
+            }
           }
           // ページ名にメーカー名を含む場合はレーベルリストへ
-          else if (wiki_msg.maker != "----" && text.indexOf(wiki_msg.maker) != -1) {
-            label_list = text;
+          else if (wiki_msg.maker.length > 0 && wiki_msg.maker != "----" && text.indexOf(wiki_msg.maker) != -1) {
+            wiki_label = text;
             found = true;
-            console.log("is include maker");
+            console.log("is include maker: " + wiki_label);
+            // 日付を調べる場合
+            if(is_search_release_with_wiki && !start_searching_release)
+            {
+              start_searching_release = true;
+              var findurl = $(this).find("a").attr("href");
+              console.log("let's find the release on " + findurl);
+              find_release_with_wiki(sender, findurl, url, wiki_label, wiki_series);
+            }
           }
           // ページ名にプレフィックスを含む場合はレーベルリストへ
-          else if (text.indexOf(wiki_msg.prefix) != -1) {
-            label_list = text;
+          else if (wiki_msg.prefix.length > 0 && text.indexOf(wiki_msg.prefix) != -1) {
+            wiki_label = text;
             found = true;
-            console.log("is include prefix");
+            console.log("is include prefix: " + wiki_label);
+            // 日付を調べる場合
+            if(is_search_release_with_wiki && !start_searching_release)
+            {
+              start_searching_release = true;
+              var findurl = $(this).find("a").attr("href");
+              console.log("let's find the release on " + findurl);
+              find_release_with_wiki(sender, findurl, url, wiki_label, wiki_series);
+            }
           }
           // ページ名にシリーズ名を含む場合はシリーズリストへ
-          else if (wiki_msg.series != "----" && text.indexOf(wiki_msg.series) != -1) {
-            series_list = text;
+          else if (wiki_msg.series.length > 0 && wiki_msg.series != "----" && text.indexOf(wiki_msg.series) != -1) {
+            wiki_series = text;
             found = true;
-            console.log("is include series");
+            console.log("is include series: " + wiki_series);
+            // 日付を調べる場合
+            if(is_search_release_with_wiki && !start_searching_release)
+            {
+              start_searching_release = true;
+              var findurl = $(this).find("a").attr("href");
+              console.log("let's find the release on " + findurl);
+              find_release_with_wiki(sender, findurl, url, wiki_label, wiki_series);
+            }
           }
         }
       });
       if (found) {
-        chrome.tabs.sendMessage(sender.tab.id, {
-          type: "found_page_list",
-          label: label_list,
-          series: series_list
-        });
-        return;
+        if(!start_searching_release)
+        {
+          chrome.tabs.sendMessage(sender.tab.id, {
+            type: "found_page_list",
+            wiki_label: wiki_label,
+            wiki_series: wiki_series,
+            release: "",
+            cast: ""
+          });
+          return;
+        }
       } else {
         // 次のページがあれば、次のページを開く
         var next_url = $(html).find("div.paging-top a:last").attr("href");
@@ -122,11 +162,13 @@
       main_tab_id = sender.tab.id;
       output = message.output;
       is_search_wiki = message.is_search_wiki;
+      is_search_release_with_wiki = message.is_search_release_with_wiki;
       console.log("send message: parse_detail to: " + sender.tab.id);
       chrome.tabs.sendMessage(sender.tab.id, {
         type: "parse_detail",
         output: output,
         is_search_wiki: is_search_wiki,
+        is_search_release_with_wiki: is_search_release_with_wiki,
         url: message.url,
         _OMITWORDS: vals["_OMITWORDS"],
         _OMNI_PREFIX: vals["_OMNI_PREFIX"],
@@ -147,6 +189,7 @@
       main_tab_id = sender.tab.id;
       output = message.output;
       is_search_wiki = message.is_search_wiki;
+      is_search_release_with_wiki = message.is_search_release_with_wiki;
       // 作品のページを新しいタブで開く
       chrome.tabs.create({
         active: false,
@@ -180,6 +223,7 @@
         type: "result",
         output: message.output,
         is_search_wiki: message.is_search_wiki,
+        is_search_release_with_wiki: message.is_search_release_with_wiki,
         url: message.url,
         title: message.title,
         cast: message.cast,
@@ -205,6 +249,7 @@
         is_iv: message.is_iv,
         is_vr: message.is_vr,
         is_adultsite: message.is_adultsite,
+        is_exbroadcast: message.is_exbroadcast,
         is_limited: message.is_limited,
         is_dod: message.is_dod,
         is_title_fixed: message.is_title_fixed
@@ -225,6 +270,7 @@
             type: "parse_detail",
             output: output,
             is_search_wiki: is_search_wiki,
+            is_search_release_with_wiki: is_search_release_with_wiki,
             url: tab.url,
             _OMITWORDS: vals["_OMITWORDS"],
             _OMNI_PREFIX: vals["_OMNI_PREFIX"],
@@ -271,5 +317,46 @@
     console.log("copy: " + str);
     document.execCommand("copy");
     document.body.removeChild(textArea);
+  }
+ 
+  function find_release_with_wiki(sender, findurl, searchurl, wiki_label, wiki_series) {
+    var x = new XMLHttpRequest();
+    x.open('GET', findurl);
+    x.onload = function () {
+      var html = $.parseHTML(x.response);
+      $(html).find("div#content_block_1-body").find("a").each( function() {
+        var href = $(this).attr("href");
+        if(href.indexOf(searchurl) != -1)
+        {
+          var release = $(this).parent().next().next().next().next().text();
+          var cast = "";
+          // Perfect-Gの場合
+          if(searchurl.indexOf("g-area") != -1)
+          {
+            cast = $(this).parent().next().next().next().text();
+          }
+          // 舞ワイフの場合
+          else if(searchurl.indexOf("mywife") != -1)
+          {
+            cast = $(this).parent().next().next().text();
+          }
+          cast = cast.replace(/\?/g, "");
+          release = release.replace(/-/g, "/");
+          console.log("found! release: " + release);
+          console.log("found! wiki label: " + wiki_label);
+          console.log("found! wiki series: " + wiki_series);
+          console.log("found! cast: " + cast);
+          chrome.tabs.sendMessage(sender.tab.id, {
+            type: "found_page_list",
+            wiki_label: wiki_label,
+            wiki_series: wiki_series,
+            release: release,
+            cast: cast
+          });
+          return;
+        }
+      });
+    }
+    x.send();
   }
 }).call(this);
