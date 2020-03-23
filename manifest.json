@@ -2,7 +2,7 @@
     "name": "dmm2ssw",
     "short_name": "D2S",
     "manifest_version": 2,
-    "version": "1.1.4",
+    "version": "1.2.0",
     "description": "FANZAからsougouwiki.com用のテキストを生成",
     "icons": {
         "16": "images/icon/icon_16.png",
@@ -42,8 +42,11 @@
                                     "http://*.g-area.org/*",
                                     "https://mywife.cc/*",
                                     "http://www.r-file.com/*",
+                                    "https://adult.contents.fc2.com/*",
                                     "https://*.caribbeancom.com/*",
-                                    "https://*.1pondo.tv/*"
+                                    "https://*.1pondo.tv/*",
+                                    "http://dl.getchu.com/*",
+                                    "https://twitter.com/*"
                                     ]
                         }
                         ],
@@ -59,8 +62,11 @@
                     "http://*.g-area.org/*",
                     "https://mywife.cc/*",
                     "http://www.r-file.com/*",
+                    "https://adult.contents.fc2.com/*",
                     "https://*.caribbeancom.com/*",
-                    "https://*.1pondo.tv/*"
+                    "https://*.1pondo.tv/*",
+                    "http://dl.getchu.com/*",
+                    "https://twitter.com/*"
                     ]
     
 }

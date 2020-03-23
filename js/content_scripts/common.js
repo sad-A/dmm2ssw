@@ -50,8 +50,11 @@
   var baseurl_perfectg = "g-area.org";
   var baseurl_mywife = "mywife.cc";
   var baseurl_realfile = "r-file.com";
+  var baseurl_fc2 = "adult.contents.fc2.com/";
   var baseurl_carib = "caribbeancom.com";
   var baseurl_pondotv = "1pondo.tv";
+  var baseurl_getchu = "dl.getchu.com";
+  var baseurl_twitter = "twitter.com";
   var baseurl_ssw = "sougouwiki.com";
   var url_details = "-/detail/=/cid=";
   var url_list = "-/list/=/";
@@ -60,12 +63,14 @@
   var url_maker = "article=maker";
   var url_keyword = "article=keyword";
   var url_search = "-/search/=/";
+  var url_dvd = "mono/dvd";
   var mgsurl_detail = "product_detail";
   var mgsurl_search = "search/search.php";
   var perfectgurl_detail = "sample_pg";
   var mywifeurl_detail = "teigaku/model";
   var realfileurl_teigaku_detail = "teigaku/item";
   var realfileurl_tanpin_detail = "tanpin/item";
+  var fc2url_detail = "article";
   var cariburl_detail = "moviepages";
   var cariburl_search = "search";
   var cariburl_searchact = "search_act";
@@ -73,6 +78,7 @@
   var pondotvurl_detail = "movies";
   var pondotvurl_search = "search";
   var pondotvurl_list = "list";
+  var getchuurl_detail = "i/item";
  
   var servicedic = {
     "dvd": "mono/dvd",
@@ -95,7 +101,7 @@
       is_first_product = true;
       console.log("output: " + output);
       console.log("is_search_wiki: " + is_search_wiki);
-      var adddiv = "<div id='dmm2ssw'></div>";
+      var adddiv = "<div id='dmm2ssw' align='left'></div>";
       // FANZAの場合
       if(url.indexOf(baseurl_dmm) != -1)
       {
@@ -147,6 +153,19 @@
           }
         }
       }
+      // FC2の場合
+      else if(url.indexOf(baseurl_fc2) != -1)
+      {
+        // 個別ページのみ対応
+        if(url.indexOf(fc2url_detail) != -1)
+        {
+          // 女優まとめページのみ対応
+          if(output == "actress")
+          {
+            $("body").find("div.items_article_left").first().prepend(adddiv);
+          }
+        }
+      }
       // カリビアンコムの場合
       else if(url.indexOf(baseurl_carib) != -1)
       {
@@ -163,6 +182,29 @@
         if(output == "actress")
         {
           $("body").find("div.contents").first().prepend(adddiv);
+        }
+      }
+      else if(url.indexOf(baseurl_getchu) != -1)
+      {
+        if(output = "actress")
+        {
+          $("body").find("table.info_bar").first().prepend(adddiv);
+        }
+      }
+      // Twitterの場合
+      else if(url.indexOf(baseurl_twitter) != -1)
+      {
+        // 女優まとめページのみ対応
+        if(output == "actress")
+        {
+          $("body").find("div").each( function() {
+            var id = $(this).attr("data-testid");
+            if(id == "UserDescription")
+            {
+              $(this).prepend(adddiv);
+              return false;
+            }
+          });
         }
       }
       if (output == "label") {
@@ -182,24 +224,49 @@
         var omnidiv = '<div id="omni_works" style="visibility:hidden">----\n<br>**総集編作品\n<br></div>';
         var adultsitediv = '<div id="adultsite_works" style="visibility:hidden">----\n<br>**アダルトサイト\n<br></div>';
         var exbroadcastdiv = '<div id="exbroadcast_works" style="visibility:hidden">----\n<br>**その他作品(配信系)\n<br></div>';
-        // カリビアンコムと一本道の場合は「その他作品(配信系)」のみ
-        if(url.indexOf(baseurl_carib) != -1 || url.indexOf(baseurl_pondotv) != -1)
-        {
-          $("body").find("div#dmm2ssw").append(exbroadcastdiv);
-        }
-        // MGSとPerfect-Gと舞ワイフの場合は「アダルトサイト」のみ
-        else if(url.indexOf(baseurl_mgs) != -1 || url.indexOf(baseurl_perfectg) != -1 || url.indexOf(baseurl_mywife) != -1 || url.indexOf(baseurl_realfile) != -1)
-        {
-          $("body").find("div#dmm2ssw").append(adultsitediv);
-        }
+        var doujindiv = '<div id="doujin_works" style="visibility:hidden">----\n<br>**同人サークル作品\n<br></div>';
+        var twitterdiv = '<div id="twitter_part" style="visibility:hidden">----\n**Twitter\n</div>';
         // FANZAの場合
-        else if(url.indexOf(baseurl_dmm) != -1)
+        if(url.indexOf(baseurl_dmm) != -1)
         {
+          // DVDの女優ページのとき
+          if(url.indexOf(url_dvd) != -1 && url.indexOf(url_actress) != -1)
+          {
+            var joyutitle = $("title").text();
+            joyutitle = joyutitle.substr(0, joyutitle.indexOf("-") - 1);
+            joyutitle = joyutitle.replace("(", "（");
+            joyutitle = joyutitle.replace(")", "）");
+            var joyuurl = url;
+            var joyuurllatter = joyuurl.substr(joyuurl.indexOf("id="));
+            joyuurllatter = joyuurllatter.substr(0, joyuurllatter.indexOf("/")) + "/sort=date/";
+            joyuurl = joyuurl.substr(0, joyuurl.indexOf("id=")) + joyuurllatter;
+            joyutitle = "*[[" + joyutitle + ">" + joyuurl + "]]";
+            $("body").find("div#dmm2ssw").append(joyutitle);
+          }
           $("body").find("div#dmm2ssw").append(basicdiv);
           $("body").find("div#dmm2ssw").append(vrdiv);
           $("body").find("div#dmm2ssw").append(ivdiv);
           $("body").find("div#dmm2ssw").append(omnidiv);
           $("body").find("div#dmm2ssw").append(adultsitediv);
+        }
+        // MGSとPerfect-Gと舞ワイフとRealFileとFC2の場合は「アダルトサイト」のみ
+        else if(url.indexOf(baseurl_mgs) != -1 || url.indexOf(baseurl_perfectg) != -1 || url.indexOf(baseurl_mywife) != -1 || url.indexOf(baseurl_realfile) != -1 || url.indexOf(baseurl_fc2) != -1)
+        {
+          $("body").find("div#dmm2ssw").append(adultsitediv);
+        }
+        // カリビアンコムと一本道の場合は「その他作品(配信系)」のみ
+        else if(url.indexOf(baseurl_carib) != -1 || url.indexOf(baseurl_pondotv) != -1)
+        {
+          $("body").find("div#dmm2ssw").append(exbroadcastdiv);
+        }
+        // Getchuの場合は「同人サークル作品」のみ
+        else if(url.indexOf(baseurl_getchu) != -1)
+        {
+          $("body").find("div#dmm2ssw").append(doujindiv);
+        }
+        else if(url.indexOf(baseurl_twitter) != -1)
+        {
+          $("body").find("div#dmm2ssw").append(twitterdiv);
         }
       }
       // FANZAの場合
@@ -252,6 +319,7 @@
               {
                 link_list.push(href);
               }
+              return false;
             }
           });
         }
@@ -301,6 +369,20 @@
           }
         }
       }
+      // FC2の場合
+      else if(url.indexOf(baseurl_fc2) != -1)
+      {
+        // 女優まとめページのみ対応
+        if(output == "actress")
+        {
+          // 個別ページのみ対応
+          if(url.indexOf(fc2url_detail) != -1)
+          {
+            send_to_parse();
+            return true;
+          }
+        }
+      }
       // カリビアンコムの場合
       else if(url.indexOf(baseurl_carib) != -1)
       {
@@ -322,6 +404,7 @@
               {
                 href = "https://www.caribbeancom.com" + href;
                 link_list.push(href);
+                return false;
               }
             });
           }
@@ -348,9 +431,30 @@
               {
                 href = "https://www.1pondo.tv" + href;
                 link_list.push(href);
+                return false;
               }
             });
           }
+        }
+      }
+      // Getchuの場合
+      else if(url.indexOf(baseurl_getchu) != -1)
+      {
+        // 女優まとめページのみ対応
+        if(output == "actress")
+        {
+          send_to_parse();
+          return true;
+        }
+      }
+      // Twitterの場合
+      else if(url.indexOf(baseurl_twitter) != -1)
+      {
+        // 女優まとめページのみ対応
+        if(output == "actress")
+        {
+          send_to_parse();
+          return true;
         }
       }
       open_next_tab();
@@ -870,7 +974,7 @@
         is_iv = false;
         is_vr = false;
         cast = "";
-        send_detail_message(is_search_wiki, baseurl_mgs);
+        send_detail_message(is_search_wiki, baseurl_perfectg);
       }
       // 舞ワイフの場合
       else if(url.indexOf(baseurl_mywife) != -1)
@@ -913,7 +1017,7 @@
         
         
         largeimg = "http://p02.mywife.cc/girl/0" + num + "/thumb.jpg";
-        smallimg = "&ref(" + largeimg + ", 147)";
+        smallimg = "&ref(" + largeimg + ", 200)";
         
         label = "舞ワイフ";
         maker = "";
@@ -936,10 +1040,12 @@
         text = text.replace(/\u3000/g, "");
         text = text.replace(/\u0009/g, "");
         text = text.replace(/\u000a/g, ",");
+        hinban = url.substring(url.indexOf("ID=") + 3);
+        number = parseInt(hinban.replace(/[a-z]/g, ""));
         if(text.indexOf("名前") != -1)
         {
           title = text.substr(text.indexOf("名前") + 3);
-          title = title.substr(title.indexOf(","));
+          title = title.substr(0, title.indexOf(","));
           console.log("title: " + title);
           anothername = title;
         }
@@ -947,7 +1053,7 @@
         if(text.indexOf("年齢") != -1)
         {
           var agetext = text.substr(text.indexOf("年齢") + 3);
-          agetext = agetext.substr(agetext.indexOf(","));
+          agetext = agetext.substr(0, agetext.indexOf(","));
           age = parseInt(agetext);
           if(age > 0)
           {
@@ -959,17 +1065,17 @@
         if(text.indexOf("身長") != -1)
         {
           tall = text.substr(text.indexOf("身長") + 3);
-          tall = tall.substr(tall.indexOf(","));
+          tall = tall.substr(0, tall.indexOf(","));
           tall = "T" + tall;
           console.log("tall: " + tall);
         }
         if(text.indexOf("サイズ") != -1)
         {
           threesize = text.substr(text.indexOf("サイズ") + 4);
-          threesize = threesize.substr(threesize.indexOf(","));
+          threesize = threesize.substr(0, threesize.indexOf(","));
           if(tall.length > 0)
           {
-           threesize = tall + threesize;
+           threesize = tall + " " + threesize;
           }
           console.log("3size: " + threesize);
           anothername += " " + threesize;
@@ -979,7 +1085,7 @@
         largeimg = "http://p02.mywife.cc/girl/0" + num + "/thumb.jpg";
         smallimg = "&ref(" + largeimg + ", 147)";
         
-        label = "舞ワイフ";
+        label = "Real File";
         maker = "";
         series = "";
         genre = "";
@@ -990,8 +1096,57 @@
         is_vr = false;
         cast = "";
         duration = 0;
-        send_detail_message(is_search_wiki, baseurl_mywife);
+        send_detail_message(is_search_wiki, baseurl_realfile);
 
+      }
+      // FC2
+      else if(url.indexOf(baseurl_fc2) != -1)
+      {
+        title = $("div.items_article_headerInfo").first().find("h3").text();
+        console.log("title: " + title);
+        release = $("div.items_article_Releasedate").first().text();
+        release = release.replace("販売日 : ", "");
+        console.log("release: " + release);
+        hinban = url.substr(url.indexOf("article/") + 8);
+        hinban = hinban.replace("/", "");
+        number = parseInt(hinban);
+        hinban = "FC2 PPV " + hinban;
+        largeimg = "https:" + $("div.items_article_MainitemThumb").first().find("img").attr("src");
+        smallimg = "&ref(" + largeimg + ", 147)";
+        var dlist = $("div.items_article_MainitemThumb").first().find("p.items_article_info").text();
+        dlist = dlist.split(":");
+        duration = 0;
+        for(var i = 0; i < dlist.length; i++)
+        {
+          if(i == 0)
+          {
+            duration = dlist[i] * 60;
+          }
+          else if(i == 1)
+          {
+            duration += dlist[i];
+          }
+          else if(i == 2)
+          {
+            if(dlist[i] >= 30)
+            {
+              // 秒数は四捨五入
+              duration += 1;
+            }
+          }
+        }
+        label = $("section.items_comment_sellerBox").first().find("h4").find("a").text();
+        maker = "";
+        series = "";
+        genre = "";
+        is_adultsite = true;
+        is_exbroadcast = false;
+        is_omnibus = false;
+        is_iv = false;
+        is_vr = false;
+        cast = "";
+        duration = 0;
+        send_detail_message(is_search_wiki, baseurl_fc2);
       }
       // カリビアンコムの場合
       else if(url.indexOf(baseurl_carib) != -1)
@@ -1000,6 +1155,7 @@
           if($(this).attr("itemprop") == "name")
           {
             title = $(this).text();
+            return false;
           }
         });
         console.log("title: " + title);
@@ -1101,7 +1257,7 @@
         is_dod = false;
         is_title_fixed = false;
         // カリビアンコムの場合はwikiを探さない
-        send_detail_message(false, baseurl_carib);
+        send_detail_message(false, "");
       }
       // 一本道の場合
       else if(url.indexOf(baseurl_pondotv) != -1)
@@ -1141,7 +1297,6 @@
             maker = "一本道";
             label = maker;
             genre = msg.UCNAME;
-            console.log("genre: " + genre);
             threesize = "";
             director = "";
             service = "";
@@ -1157,9 +1312,102 @@
             is_adultsite = false;
             is_exbroadcast = true;
             is_title_fixed = false;
-            send_detail_message(false, baseurl_pondotv);
+            send_detail_message(false, "");
           }
         });
+      }
+      // Getchuの場合
+      else if(url.indexOf(baseurl_getchu) != -1)
+      {
+        title = $("meta[property='og:title']").attr('content');
+        console.log("title: " + title);
+        largeimg = $("meta[property='og:image']").attr('content');
+        smallimg = "&ref(" + largeimg.replace("top", "small") + ", 147)";
+        $("td.bluetext").each( function() {
+          var text = $(this).text();
+          if(text.indexOf("サークル") != -1)
+          {
+            label = $(this).next().text();
+            console.log("label: " + label);
+          }
+          else if(text.indexOf("配信開始日") != -1)
+          {
+            release = $(this).next().text();
+            broadcast_release = release;
+            console.log("release: "+ release);
+          }
+          else if(text.indexOf("趣向") != -1)
+          {
+            genre = $(this).next().text();
+            console.log("genre: " + genre);
+          }
+        });
+        maker = "Getchu";
+        threesize = "";
+        director = "";
+        service = "";
+        hinban = "";
+        prefix = "";
+        number = 0;
+        anothername = "";
+        is_omnibus = false;
+        is_iv = false;
+        is_vr = false;
+        is_limited = false;
+        is_dod = false;
+        is_adultsite = false;
+        is_exbroadcast = false;
+        is_title_fixed = false;
+        send_detail_message(is_search_wiki, baseurl_getchu);
+      }
+      // Twitterの場合
+      else if(url.indexOf(baseurl_twitter) != -1)
+      {
+        title = $("div.css-1dbjc4n.r-15d164r.r-1g94qm0").text();
+        title = title.substr(0, title.lastIndexOf("@")) + " (" + title.substr(title.lastIndexOf("@")) + ") | Twitter";
+        console.log("title: " + title);
+        $("div").each( function() {
+          var id = $(this).attr("data-testid");
+          if(id == "UserDescription")
+          {
+            cast = $(this).text();
+            cast = cast.replace("----\n**Twitter\n", "");
+            cast = cast.replace(/\n/g, "~~\n>");
+            cast = ">" + cast;
+            console.log("description: " + cast);
+            return false;
+          }
+        });
+        $("a").each( function() {
+          var href = $(this).attr("href");
+          var account_name = url.substr(url.indexOf("twitter.com/") + 12);
+          if(href.indexOf(account_name + "/photo") != -1)
+          {
+            largeimg = $(this).find("img").attr("src");
+            smallimg = "&ref(" + largeimg + ", 147)";
+            console.log("img: " + largeimg);
+            return false;
+          }
+        });
+        maker = "";
+        label = "";
+        genre = "";
+        threesize = "";
+        director = "";
+        service = "";
+        hinban = "";
+        prefix = "";
+        number = 0;
+        anothername = "";
+        is_omnibus = false;
+        is_iv = false;
+        is_vr = false;
+        is_limited = false;
+        is_dod = false;
+        is_adultsite = false;
+        is_exbroadcast = false;
+        is_title_fixed = false;
+        send_detail_message(false, "");
       }
       return true;
     }
@@ -1172,6 +1420,14 @@
       if(msg.cast.length > 0)
       {
         cast = msg.cast;
+      }
+      if(msg.largeimg.length > 0)
+      {
+        largeimg = msg.largeimg;
+      }
+      if(msg.smallimg.length > 0)
+      {
+        smallimg = msg.smallimg;
       }
       wiki_label = msg.wiki_label;
       wiki_series = msg.wiki_series;
@@ -1268,7 +1524,19 @@
           matomehinban = "";
           cast_list = "<font color='red'>女優名：" + cast + "</font>";
         }
-        
+        // RealFileの場合
+        else if(msg.url.indexOf(baseurl_realfile) != -1)
+        {
+          matometitle = "Real File No." + number + " " + anothername;
+          matomelabel = "";
+          matomehinban = "";
+          cast_list = "<font color='red'>女優名：" + cast + "</font>";
+        }
+        // FC2の場合
+        else if(msg.url.indexOf(baseurl_fc2) != -1)
+        {
+          matometitle = "FC2 " + msg.title;
+        }
         if(matomelabel.length > 0)
         {
           matomelabel = "（" + matomelabel + "）";
@@ -1292,6 +1560,17 @@
         } else if (msg.is_vr) {
           $("body").find("div#vr_works").attr("style", "visibility:visible");
           $("body").find("div#vr_works").append(joyumatome);
+        // Getchuの場合
+        } else if(msg.url.indexOf(baseurl_getchu) != -1)
+        {
+          $("body").find("div#doujin_works").attr("style", "visibility:visible");
+          $("body").find("div#doujin_works").append(joyumatome);
+        // Twitterの場合
+        } else if(msg.url.indexOf(baseurl_twitter) != -1)
+        {
+          joyumatome = "[[" + matometitle + ">" + msg.url + "]]\n" + "[[" + msg.smallimg + ">" + msg.largeimg + "]]\n" + msg.cast + "\n<br><br><br>";
+          $("body").find("div#twitter_part").attr("style", "visibility:visible");
+          $("body").find("div#twitter_part").append(joyumatome);
         } else {
           $("body").find("div#basic_works").append(joyumatome);
         }

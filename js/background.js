@@ -66,6 +66,8 @@
           wiki_label: wiki_label,
           wiki_series: wiki_series,
           release: "",
+          smallimg: "",
+          largeimg: "",
           cast: ""
         });
         return;
@@ -141,6 +143,8 @@
             wiki_label: wiki_label,
             wiki_series: wiki_series,
             release: "",
+            smallimg: "",
+            largeimg: "",
             cast: ""
           });
           return;
@@ -326,6 +330,8 @@
       var html = $.parseHTML(x.response);
       $(html).find("div#content_block_1-body").find("a").each( function() {
         var href = $(this).attr("href");
+        var smallimg = "";
+        var largeimg = "";
         if(href.indexOf(searchurl) != -1)
         {
           var release = $(this).parent().next().next().next().next().text();
@@ -340,17 +346,23 @@
           {
             cast = $(this).parent().next().next().text();
           }
+          // RealFileの場合
+          else if(searchurl.indexOf("r-file") != -1)
+          {
+            cast = $(this).parent().next().next().next().text();
+            largeimg = $(this).parent().next().next().find("img").attr("src");
+            smallimg = "&ref(" + largeimg + ", 147)";
+          }
           cast = cast.replace(/\?/g, "");
           release = release.replace(/-/g, "/");
           console.log("found! release: " + release);
-          console.log("found! wiki label: " + wiki_label);
-          console.log("found! wiki series: " + wiki_series);
-          console.log("found! cast: " + cast);
           chrome.tabs.sendMessage(sender.tab.id, {
             type: "found_page_list",
             wiki_label: wiki_label,
             wiki_series: wiki_series,
             release: release,
+            smallimg: smallimg,
+            largeimg: largeimg,
             cast: cast
           });
           return;
