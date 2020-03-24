@@ -151,3 +151,12 @@ button {
   font-size: 100%;
   cursor: pointer;
 }
+
+span.annotation {
+    color: #B92020;
+}
+
+span.breakdown {
+    color: #BBBBBB;
+    font-size: 10px;
+}

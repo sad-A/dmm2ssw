@@ -1464,10 +1464,10 @@
         console.log("msg.wiki_label: " + msg.wiki_label);
         console.log("msg.wiki_series: " + msg.wiki_series);
         if (msg.wiki_label.length > 0) {
-          wiki_label = "　[[(レーベル一覧)>" + msg.wiki_label + "]]";
+          wiki_label = " [[(レーベル一覧)>" + msg.wiki_label + "]]";
         }
         if (msg.wiki_series.length > 0) {
-          wiki_series = "　[[(シリーズ一覧)>" + msg.wiki_series + "]]";
+          wiki_series = " [[(シリーズ一覧)>" + msg.wiki_series + "]]";
         }
         var cast_list = "";
         if (msg.cast.indexOf("／") != -1) {

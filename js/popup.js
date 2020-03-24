@@ -82,6 +82,13 @@
        window.close();
      });
    });
+   $("a").on("click", function() {
+     var href = $(this).attr("href");
+     chrome.tabs.create({
+       active: true,
+       url: href
+     });
+   });
    $('input[name="radio"]').change(function () {
      if ($('input[name="radio"]:checked').val() == "label") {
        $('input[name="checkbox_renban"]').prop("disabled", false);
