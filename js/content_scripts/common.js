@@ -51,6 +51,8 @@
   var baseurl_mywife = "mywife.cc";
   var baseurl_realfile = "r-file.com";
   var baseurl_fc2 = "adult.contents.fc2.com/";
+  var baseurl_digigra = "https://digi-gra.net/";
+  var baseurl_lovepop = "https://lovepop.net/";
   var baseurl_carib = "caribbeancom.com";
   var baseurl_pondotv = "1pondo.tv";
   var baseurl_getchu = "dl.getchu.com";
@@ -71,6 +73,10 @@
   var realfileurl_teigaku_detail = "teigaku/item";
   var realfileurl_tanpin_detail = "tanpin/item";
   var fc2url_detail = "article";
+  var digiloveurl_detail = "ppv/item";
+  var digiloveurl_actress = "models/detail";
+  var digiloveurl_monthly = "monthly/model";
+  var digiloveurl_list = "ppv";
   var cariburl_detail = "moviepages";
   var cariburl_search = "search";
   var cariburl_searchact = "search_act";
@@ -87,6 +93,7 @@
     "ama": "digital/videoc"
   }
   chrome.runtime.onMessage.addListener(function (msg, sender) {
+    //================================================================================
     // exportボタンクリック時
     if (msg.type == "export") {
       initialize();
@@ -165,6 +172,15 @@
             $("body").find("div.items_article_left").first().prepend(adddiv);
           }
         }
+      }
+      // デジグラ、LOVEPOPの場合
+      else if(url.indexOf(baseurl_digigra) != -1 || url.indexOf(baseurl_lovepop) != -1)
+      {
+          // 女優まとめページのみ対応
+          if(output == "actress")
+          {
+            $("body").find("div.container").first().prepend(adddiv);
+          }
       }
       // カリビアンコムの場合
       else if(url.indexOf(baseurl_carib) != -1)
@@ -249,8 +265,8 @@
           $("body").find("div#dmm2ssw").append(omnidiv);
           $("body").find("div#dmm2ssw").append(adultsitediv);
         }
-        // MGSとPerfect-Gと舞ワイフとRealFileとFC2の場合は「アダルトサイト」のみ
-        else if(url.indexOf(baseurl_mgs) != -1 || url.indexOf(baseurl_perfectg) != -1 || url.indexOf(baseurl_mywife) != -1 || url.indexOf(baseurl_realfile) != -1 || url.indexOf(baseurl_fc2) != -1)
+        // MGS/Perfect-G/舞ワイフ/RealFile/FC2/デジグラ/LOVEPOPの場合は「アダルトサイト」のみ
+        else if(url.indexOf(baseurl_mgs) != -1 || url.indexOf(baseurl_perfectg) != -1 || url.indexOf(baseurl_mywife) != -1 || url.indexOf(baseurl_realfile) != -1 || url.indexOf(baseurl_fc2) != -1 || url.indexOf(baseurl_digigra) != -1 || url.indexOf(baseurl_lovepop) != -1)
         {
           $("body").find("div#dmm2ssw").append(adultsitediv);
         }
@@ -383,6 +399,44 @@
           }
         }
       }
+      // デジグラ/LOVEPOPの場合
+      else if(url.indexOf(baseurl_digigra) != -1 || url.indexOf(baseurl_lovepop) != -1)
+      {
+        // 女優まとめページのみ対応
+        if(output == "actress")
+        {
+          // PPV動画ページのとき
+          if(url.indexOf(digiloveurl_detail) != -1)
+          {
+            send_to_parse();
+            return true;
+          }
+          // 月額モデルページ/PPVのリストページのとき
+          else if(url.indexOf(digiloveurl_monthly) != -1 || url.indexOf(digiloveurl_list) != -1)
+          {
+            $("div.article-image").each(function() {
+              var href = $(this).find("a").attr("href");
+              if(href.indexOf("https://digi-gra.net/") == -1)
+              {
+                href = "https://digi-gra.net/" + href;
+              }
+              url_list.push(href);
+            });
+          }
+          // 女優ページのとき
+          else if(url.indexOf(digiloveurl_actress) != -1)
+          {
+            $("div.ppv-product-introduction-and-review-image").each(function() {
+              var href = $(this).find("a").attr("href");
+              if(href.indexOf("https://digi-gra.net/") == -1)
+              {
+                href = "https://digi-gra.net/" + href;
+              }
+              url_list.push(href);
+            });
+          }
+        }
+      }
       // カリビアンコムの場合
       else if(url.indexOf(baseurl_carib) != -1)
       {
@@ -460,6 +514,7 @@
       open_next_tab();
       return true;
     }
+    //================================================================================
     // 作品ページを解析
     else if (msg.type == "parse_detail") {
       url = msg.url;
@@ -633,8 +688,6 @@
             } else if (text.indexOf("レーベル") != -1) {
               label = $(this).next().text();
               label = label.replace(/\r?\n/g, '');
-              label = label.replace("（", "／");
-              label = label.replace("）", "");
               for (var i = 3; i < msg._OMIT_LABEL.length; i += 2) {
                 // 総集編レーベル判定
                 if (series.indexOf(msg._OMIT_LABEL[i]) != -1) {
@@ -648,6 +701,11 @@
             } else if (text.indexOf("メーカー") != -1) {
               maker = $(this).next().text();
               maker = maker.replace(/\r?\n/g, '');
+              // 下半身タイガース/フェ地下のメーカー名はフェ地下。
+              if(maker.indexOf("下半身タイガース/フェ地下") != -1)
+              {
+                maker = "フェ地下";
+              }
               console.log("maker: " + maker);
             // シリーズ
             } else if (text.indexOf("シリーズ") != -1) {
@@ -962,7 +1020,7 @@
           }
         });
         anothername += " " + age + "歳 " + threesize;
-        smallimg = "http://www.g-area.com/pg_info_thumb/pg_info_" + prefix + "150_100.jpg";
+        smallimg = "&ref(http://www.g-area.com/pg_info_thumb/pg_info_" + prefix + "150_100.jpg, 147)";
         largeimg = "http://www.g-area.com/img/main/" + prefix + "_320_180.jpg";
         label = "Perfect-G";
         maker = "";
@@ -1147,6 +1205,57 @@
         cast = "";
         duration = 0;
         send_detail_message(is_search_wiki, baseurl_fc2);
+      }
+      // デジグラ、LOVEPOPの場合
+      else if(url.indexOf(baseurl_digigra) != -1 || url.indexOf(baseurl_lovepop) != -1)
+      {
+        title = $("h2.ppv-item-detail-title").first().text();
+        console.log("title: " + title);
+        if(url.indexOf(baseurl_digigra) != -1)
+        {
+          label = "デジグラ";
+        }
+        else
+        {
+          label = "LOVEPOP";
+        }
+        $("dt").each(function() {
+          var text = $(this).text();
+          if(text.indexOf("ファイル内容") != -1)
+          {
+             var dlist = $(this).next().text();
+             dlist = dlist.replace("時間", ":");
+             dlist = dlist.replace("分", ":");
+             dlist = dlist.replace("秒", "");
+             dlist = dlist.replace("4K", "");
+             dlist = dlist.replace(/[^0-9:]/g, "");
+             dlist = dlist.split(":");
+             if(dlist.length >= 3)
+             {
+               duration = parseInt(dlist[0]) * 60 + parseInt(dlist[1]);
+               if(parseInt(dlist[2]) >= 30)
+               {
+                 duration += 1;
+               }
+             }
+             else if(dlist.length == 2){
+               duration = parseInt(dlist[0]);
+               if(parseInt(dlist[1]) >= 30)
+               {
+                 duration += 1;
+               }
+             }
+             else if(dlist.length == 1)
+             {
+                duration = 1;
+             }
+             else
+             {
+               duration = 0;
+             }
+          }
+        });
+        release = "";
       }
       // カリビアンコムの場合
       else if(url.indexOf(baseurl_carib) != -1)
@@ -1411,6 +1520,7 @@
       }
       return true;
     }
+    //================================================================================
     // レーベル・シリーズが判明済
     else if (msg.type == "found_page_list") {
       if(msg.release.length > 0)
@@ -1434,12 +1544,14 @@
       console.log("wiki label: " + wiki_label);
       send_detail_message(false, "");
       return true;
+    //================================================================================
     // 次の作品を開く
     } else if (msg.type == "next_tab") {
       open_next_tab();
       console.log("next_tab");
       return true;
     }
+    //================================================================================
     // 結果表示
     else if (msg.type == "result") {
       if (!self && is_ignore_limited) {
@@ -1454,6 +1566,7 @@
           return true;
         }
       }
+
       var matometitle = msg.title;
       var matomerelease = msg.release;
       if (msg.release == "") {
@@ -1477,20 +1590,47 @@
         
         var matomelabel = "";
         var matomehinban = " " + msg.hinban;
-        if(msg.label == "")
+        var matomelimited = "";
+        // レーベル名の方がメーカー名より短く、かつメーカー名が「レーベル名/メーカー名」になっている場合は、レーベル名とメーカー名を同一にする
+        if(msg.label.length < msg.maker.length)
         {
-          if(msg.maker == "")
+          if(msg.maker.indexOf(msg.label + "/") != -1)
+          {
+             msg.label = msg.maker;
+          }
+        }
+        // レーベル名未記載の場合
+        if(msg.label == "" || msg.label == "----")
+        {
+          // メーカー名も未記載の場合は無視
+          if(msg.maker == "" || msg.maker == "----")
           {
           
           }
+          // メーカー名があれば、メーカー名を記載
           else
           {
             matomelabel = msg.maker;
           }
         }
-        else if(msg.label != "----")
+        // レーベル名記載ありの場合
+        else
         {
-          matomelabel = msg.label;
+          // メーカー名が未記載、またはレーベル名と同じ場合は、レーベル名のみ記載
+          if(msg.maker == msg.label || msg.maker == "" || msg.maker == "----")
+          {
+            matomelabel = msg.label;
+          }
+          // メーカー名、レーベル名がそれぞれ存在する場合は、メーカー／レーベルで記載
+          else
+          {
+            matomelabel = msg.maker + "／" + msg.label;
+          }
+        }
+        // 限定盤の際は、その注意を記載
+        if(msg.is_limited)
+        {
+          matomelimited = "<font color='red'>こちらは限定盤商品です。ご注意ください。</font>\n</br>"
         }
         // FANZAの素人動画の場合
         if (msg.url.indexOf("videoc") != -1 && msg.is_adultsite) {
@@ -1542,7 +1682,7 @@
           matomelabel = "（" + matomelabel + "）";
         }
         
-        var joyumatome = "//" + matomerelease + matomehinban + "\n<br>" + "[[" + matometitle + matomelabel + ">" + msg.url + "]]" + wiki_label + wiki_series + "\n<br>" + "[[" + msg.smallimg + ">" + msg.largeimg + "]]" + "\n<br>" + cast_list + "\n<br>";
+        var joyumatome = "//" + matomerelease + matomehinban + "\n<br>" + "[[" + matometitle + matomelabel + ">" + msg.url + "]]" + wiki_label + wiki_series + "\n<br>" + "[[" + msg.smallimg + ">" + msg.largeimg + "]]" + "\n<br>" + cast_list + matomelimited + "\n<br>";
         // アダルトサイトと配信系は、総集編／VR／IV／であっても、それぞれのカテゴリに表示
         if (msg.is_adultsite) {
           $("body").find("div#adultsite_works").attr("style", "visibility:visible");
@@ -1670,6 +1810,7 @@
     return true;
   });
  
+  //================================================================================
   open_next_tab = function () {
     if (link_list.length > 0) {
       console.log("send message: open_detail");
@@ -1685,6 +1826,7 @@
     }
   };
  
+  //================================================================================
   initialize = function() {
     link_list = [];
     copy_list = [];
@@ -1730,6 +1872,7 @@
     title_list = [];
   };
  
+  //================================================================================
   send_to_parse = function() {
     self = true;
     console.log("send message: to_parse");
@@ -1743,7 +1886,32 @@
     });
   };
  
+  //================================================================================
   send_detail_message = function(send_wiki, searchurl) {
+    // レーベル名の方がメーカー名より長く、かつレーベル名にメーカー名が含まれる場合は、レーベル名の中からメーカー名を削除
+    if(label.length > maker.length)
+    {
+      if(label.indexOf(maker) != -1)
+      {
+        console.log("label: " + label + " is including maker: " + maker);
+        label = label.replace(maker, "");
+        label = label.replace("（）", ""); // 空になったカッコがあれば、消す
+        console.log("label: " + label);
+      }
+    }
+    // レーベル名とメーカー名が違って、メーカー名が「メーカー名/配信元」になっている場合、メーカー名から配信元を削除
+    if(label != maker && maker.indexOf(label) == -1)
+    {
+      if(maker.indexOf("/") != -1)
+      {
+        maker = maker.substr(0, maker.indexOf("/"));
+      }
+    }
+    // レーベル名が「レーベル名/配信元（またはメーカー名）のようになっている場合は、レーベル名からメーカー名を削除
+    if(label.indexOf("/") != -1)
+    {
+       label = label.substr(0, label.indexOf("/"));
+    }
     console.log("is_search_wiki:" + send_wiki);
     if (send_wiki && output == "actress") {
       var suburl = url;

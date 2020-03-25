@@ -1,16 +1,45 @@
  (function () {
+  var match = false;
+  chrome.tabs.query({
+    active: true,
+    currentWindow: true
+  }, function (tabs) {
+    chrome.runtime.getManifest().content_scripts.forEach(function(cs) {
+      cs.matches.forEach(function(url){
+        url = url.replace("http://", "");
+        url = url.replace("https://", "");
+        url = url.replace(/\*/g, "");
+        if(tabs[0].url.indexOf(url) != -1)
+        {
+          match = true;
+          console.log("match: " + match);
+        }
+      });
+    });
+    if(!match)
+    {
+      $('input').prop("disabled", true);
+      $('button').prop("disabled", true);
+    }
+    console.log("url: " + tabs[0].url);
+  });
   var background = chrome.extension.getBackgroundPage();
   chrome.storage.sync.get(["out"], function(res){
-    $("input[value='" + res.out + "']").prop("checked", true);
-    if ($('input[name="radio"]:checked').val() == "label") {
-      $('input[name="checkbox_renban"]').prop("disabled", false);
-      $('input[name="checkbox_director"]').prop("disabled", false);
-      $('input[name="checkbox_wiki"]').prop("disabled", true);
-    } else if ($('input[name="radio"]:checked').val() == "actress") {
-      $('input[name="checkbox_renban"]').prop("disabled", true);
-      $('input[name="checkbox_director"]').prop("disabled", true);
-      $('input[name="checkbox_wiki"]').prop("disabled", false);
-    }
+    setTimeout(function() {
+      if(match)
+      {
+        $("input[value='" + res.out + "']").prop("checked", true);
+        if ($('input[name="radio"]:checked').val() == "label") {
+          $('input[name="checkbox_renban"]').prop("disabled", false);
+          $('input[name="checkbox_director"]').prop("disabled", false);
+          $('input[name="checkbox_wiki"]').prop("disabled", true);
+        } else if ($('input[name="radio"]:checked').val() == "actress") {
+          $('input[name="checkbox_renban"]').prop("disabled", true);
+          $('input[name="checkbox_director"]').prop("disabled", true);
+          $('input[name="checkbox_wiki"]').prop("disabled", false);
+        }
+      }
+    }, 10);
   });
   chrome.storage.sync.get(["is_renban"], function(res){
     $("input[name='checkbox_renban']").prop("checked", res.is_renban);
@@ -47,7 +76,10 @@
       is_search_wiki: is_search_wiki,
       is_renban: is_renban
     };
-    background.chrome.storage.sync.set(store, function(){});
+    if(match)
+    {
+      background.chrome.storage.sync.set(store, function(){});
+    }
   });
    $("#check").on("click", () => {
      chrome.tabs.query({
@@ -90,14 +122,17 @@
      });
    });
    $('input[name="radio"]').change(function () {
-     if ($('input[name="radio"]:checked').val() == "label") {
-       $('input[name="checkbox_renban"]').prop("disabled", false);
-       $('input[name="checkbox_director"]').prop("disabled", false);
-       $('input[name="checkbox_wiki"]').prop("disabled", true);
-     } else if ($('input[name="radio"]:checked').val() == "actress") {
-       $('input[name="checkbox_renban"]').prop("disabled", true);
-       $('input[name="checkbox_director"]').prop("disabled", true);
-       $('input[name="checkbox_wiki"]').prop("disabled", false);
+     if(match)
+     {
+       if ($('input[name="radio"]:checked').val() == "label") {
+         $('input[name="checkbox_renban"]').prop("disabled", false);
+         $('input[name="checkbox_director"]').prop("disabled", false);
+         $('input[name="checkbox_wiki"]').prop("disabled", true);
+       } else if ($('input[name="radio"]:checked').val() == "actress") {
+         $('input[name="checkbox_renban"]').prop("disabled", true);
+         $('input[name="checkbox_director"]').prop("disabled", true);
+         $('input[name="checkbox_wiki"]').prop("disabled", false);
+       }
      }
    });
  }).call(this);

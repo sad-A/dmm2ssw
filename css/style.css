@@ -129,7 +129,7 @@ form fieldset {
   cursor: pointer;
   transition: 0.2s;
 }
-#inspect:hover, #check:hover {
+#inspect:hover {
   background-color: #20B9AB;
 }
 #inspect span, #check span {
@@ -150,6 +150,14 @@ button {
   padding: 1.5em;
   font-size: 100%;
   cursor: pointer;
+}
+
+button:hover {
+  background-color: #20B9AB;
+}
+
+button:disabled {
+    background-color: #ccc;
 }
 
 span.annotation {

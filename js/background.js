@@ -138,6 +138,7 @@
       if (found) {
         if(!start_searching_release)
         {
+          console.log("send found_page_list to: " + sender.tab.id);
           chrome.tabs.sendMessage(sender.tab.id, {
             type: "found_page_list",
             wiki_label: wiki_label,
@@ -155,6 +156,21 @@
         if (next_url && next_url.length > 0 && next_url.indexOf(baseurl_ssw) != -1) {
           searchSougouWiki(sender, next_url);
           return;
+        }
+        // 次のページもない場合は、空でも良いのでそのまま送信
+        else
+        {
+          console.log("send found_page_list to: " + sender.tab.id);
+          chrome.tabs.sendMessage(sender.tab.id, {
+            type: "found_page_list",
+            wiki_label: wiki_label,
+            wiki_series: wiki_series,
+            release: "",
+            smallimg: "",
+            largeimg: "",
+            cast: ""
+          });
+         return;
         }
       }
     }
