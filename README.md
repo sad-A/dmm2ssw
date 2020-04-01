@@ -4,11 +4,8 @@ chrome extension for dmm2ssw
 
 FANZAのページから情報を自動抽出して、sougouwiki用のwikiフォーマットテキストを出力します。
 
-FANZAのリストページ（/mono/dvd/-/list/=/など）、検索ページ（search/=/searchstr=）、作品詳細ページ（/-/detail/=/cid=）などで動作します。
-MGS動画に対応しました。検索ページ（/search/）、作品紹介ページ（/product_detail/）などで動作します。
-カリビアンコムと一本道に対応しました。検索ページやリストページ、作品紹介ページなどで動作します。ただし、女優まとめページでのみ動作します。
-FC2、G-AREA Perfect-G、舞ワイフ、Real File、DL.Getchuに対応しました。作品紹介ページで、女優まとめページでのみ動作します。
-Twitterに対応しました。個人のページで女優まとめページでのみ動作します。
+ポップアップで対応サイトが表示されます。
+例えば、FANZAのリストページ（/mono/dvd/-/list/=/など）、検索ページ（search/=/searchstr=）、作品詳細ページ（/-/detail/=/cid=）などで動作します。
 
 使い方解説動画
 https://youtu.be/M8n3DQthTW0
@@ -33,3 +30,4 @@ https://docs.google.com/spreadsheets/d/1KAcqtsVTUurYatcY7KxBVmsvZdJv70j31D0cXrqN
 伏字の予測解除に対応しています。予測解除部分は<span style="color:red">赤字</span>で表示されます。
 ●校　→　高校（or学校）
 というように、解除結果が正しいとは限らないため、コピペする際は内容をよく確認してください。
+サムネイルへの直リンクが不可なサイト（デジグラ、LOVEPOP）は、その旨の注意書きを記載し、画像アップロード先のリンクを取得するためのボタンを設置しました。
