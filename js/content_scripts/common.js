@@ -3107,10 +3107,10 @@
         console.log("msg.wiki_label: " + msg.wiki_label);
         console.log("msg.wiki_series: " + msg.wiki_series);
         if (msg.wiki_label.length > 0) {
-          wiki_label = " [[(レーベル一覧)>" + '<a class="actress_link" href="http://sougouwiki.com/d/' +EscapeEUCJP(msg.wiki_label) + '" target="_blank">' + msg.wiki_label + '</a>' + "]]";
+          wiki_label = "　[[(レーベル一覧)>" + '<a class="actress_link" href="http://sougouwiki.com/d/' +EscapeEUCJP(msg.wiki_label) + '" target="_blank">' + msg.wiki_label + '</a>' + "]]";
         }
         if (msg.wiki_series.length > 0) {
-          wiki_series = " [[(シリーズ一覧)>" + '<a class="actress_link" href="http://sougouwiki.com/d/' +EscapeEUCJP(msg.wiki_series) + '" target="_blank">' + msg.wiki_series + '</a>' + "]]";
+          wiki_series = "　[[(シリーズ一覧)>" + '<a class="actress_link" href="http://sougouwiki.com/d/' +EscapeEUCJP(msg.wiki_series) + '" target="_blank">' + msg.wiki_series + '</a>' + "]]";
         }
         var cast_list = "";
         // 2人以上のときは出演者を表示
