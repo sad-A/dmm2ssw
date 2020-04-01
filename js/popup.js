@@ -8,6 +8,7 @@
       cs.matches.forEach(function(url){
         url = url.replace("http://", "");
         url = url.replace("https://", "");
+        url = url.replace("*.", "");
         url = url.replace(/\*/g, "");
         if(tabs[0].url.indexOf(url) != -1)
         {

@@ -7,7 +7,10 @@
   var send_to_parse;
   var url;
   var output;
+  var div_to_add;
   var self = false;
+  var is_replace_http = false;
+  var is_add_www = false;
   var is_renban = false;
   var is_director = false;
   var is_ignore_limited = false;
@@ -15,6 +18,7 @@
   var is_search_wiki = false;
   var is_search_release_with_wiki = false;
   var is_first_product = false;
+  var is_detail_page = false;
   var title = "";
   var service = "";
   var duration = "";
@@ -24,7 +28,7 @@
   var label = "";
   var maker = "";
   var series = "";
-  var cast = "";
+  var cast = [];
   var anothername = "";
   var threesize = "";
   var genre = [];
@@ -40,6 +44,7 @@
   var is_iv = false;
   var is_vr = false;
   var is_adultsite = false;
+  var is_exdvd = false;
   var is_exbroadcast = false;
   var is_limited = false;
   var is_dod = false;
@@ -47,17 +52,29 @@
   var title_list = [];
   var baseurl_dmm = "dmm.co.jp";
   var baseurl_mgs = "mgstage.com";
+  var baseurl_unext = "video.hnext.jp";
+  var baseurl_faleno = "faleno.jp";
   var baseurl_perfectg = "g-area.org";
   var baseurl_mywife = "mywife.cc";
   var baseurl_realfile = "r-file.com";
+  var baseurl_himemix = "himemix.com";
+  var baseurl_girlsblue = "girls-blue.com";
+  var baseurl_happyfish = "h-fish.com";
+  var baseurl_tokyo247 = "tokyo-247.net";
   var baseurl_fc2 = "adult.contents.fc2.com/";
-  var baseurl_digigra = "https://digi-gra.net/";
-  var baseurl_lovepop = "https://lovepop.net/";
+  var baseurl_digigra = "digi-gra.net/";
+  var baseurl_lovepop = "lovepop.net/";
+  var baseurl_iromegane = "iromegane.jp";
+  var baseurl_scute = "s-cute.com";
+  var baseurl_aventertainments = "aventertainments.com";
   var baseurl_carib = "caribbeancom.com";
   var baseurl_pondotv = "1pondo.tv";
+  var baseurl_heyzo = "heyzo.com"
+  var baseurl_tokyohot = "tokyo-hot.com";
   var baseurl_getchu = "dl.getchu.com";
   var baseurl_twitter = "twitter.com";
-  var baseurl_ssw = "sougouwiki.com";
+  var baseurl_sougouwiki = "sougouwiki.com";
+  var baseurl_seesaa = "seesaawiki.jp";
   var url_details = "-/detail/=/cid=";
   var url_list = "-/list/=/";
   var url_actress = "article=actress";
@@ -68,15 +85,34 @@
   var url_dvd = "mono/dvd";
   var mgsurl_detail = "product_detail";
   var mgsurl_search = "search/search.php";
+  var unexturl_detail = "/title/";
+  var unexturl_actress = "/browse/actor/";
+  var unexturl_list = "/browse/";
+  var falenourl_detail = "/works/";
+  var falenourl_actress = "/actress/";
+  var falenourl_list = "/work/";
   var perfectgurl_detail = "sample_pg";
   var mywifeurl_detail = "teigaku/model";
   var realfileurl_teigaku_detail = "teigaku/item";
   var realfileurl_tanpin_detail = "tanpin/item";
+  var himemixurl_teigaku_detail = "teigaku/model";
+  var himemixurl_tanpin_detail = "tanpin/model";
+  var girlsblueurl_teigaku_detail = "teigaku/item";
+  var girlsblueurl_tanpin_detail = "tanpin/item";
+  var happyfishurl_teigaku_detail = "teigaku/item";
+  var happyfishurl_tanpin_detail = "tanpin/item";
+  var tokyo247url_detail = "/ms/";
   var fc2url_detail = "article";
   var digiloveurl_detail = "ppv/item";
   var digiloveurl_actress = "models/detail";
   var digiloveurl_monthly = "monthly/model";
   var digiloveurl_list = "ppv";
+  var iromeganeurl_iro_detail = "iro_shousai";
+  var iromeganeurl_faily_detail = "fairydollrebirth";
+  var iromeganeurl_actress = "-top";
+  var scuteurl_detail = "/contents/";
+  var scuteurl_actress = "/girls/";
+  var aventertainmentsurl_detail = "product_lists";
   var cariburl_detail = "moviepages";
   var cariburl_search = "search";
   var cariburl_searchact = "search_act";
@@ -84,6 +120,12 @@
   var pondotvurl_detail = "movies";
   var pondotvurl_search = "search";
   var pondotvurl_list = "list";
+  var heyzourl_detail = "moviepages";
+  var heyzourl_search = "search";
+  var heyzourl_list = "listpages";
+  var tokyohoturl_detail = "product";
+  var tokyohoturl_list = "product/?";
+  var tokyohoturl_actress = "cast";
   var getchuurl_detail = "i/item";
  
   var servicedic = {
@@ -97,6 +139,34 @@
     // exportボタンクリック時
     if (msg.type == "export") {
       initialize();
+      // URL整形
+      chrome.runtime.getManifest().content_scripts.forEach(function(cs) {
+        cs.matches.forEach(function(url){
+          var surl = url.replace("http://", "");
+          surl = surl.replace("https://", "");
+          surl = surl.replace("*.", "");
+          surl = surl.replace(/\*/g, "");
+          if(msg.url.indexOf(surl) != -1)
+          {
+            console.log("match: " + url);
+            // httpsアクセスが可能なのに、httpアクセスしている場合、なるだけhttpsアクセスにする
+            if(url.indexOf("https://") != -1 && msg.url.indexOf("http://") != -1)
+            {
+              is_replace_http = true;
+              msg.url = msg.url.replace("http://", "https://");
+              console.log("is_replace_http: " + is_replace_http);
+            }
+            
+            // wwwがある場合もない場合もOKのときは、www有りを採用
+            if(url.indexOf("*.") != -1 && msg.url.indexOf("www.") == -1)
+            {
+              is_add_www = true;
+              msg.url = msg.url.replace("://", "://www.");
+              console.log("is_add_www: " + is_add_www);
+            }
+          }
+        });
+      });
       url = msg.url;
       console.log("url: " + url);
       output = msg.output;
@@ -112,75 +182,182 @@
       // FANZAの場合
       if(url.indexOf(baseurl_dmm) != -1)
       {
-        $("body").find("td#mu").prepend(adddiv);
+        div_to_add = $("body").find("td#mu");
+        div_to_add.prepend(adddiv);
       }
       //MGSの場合
       else if(url.indexOf(baseurl_mgs) != -1)
       {
-        $("body").find("ul.Bread_crumb").prepend(adddiv);
-        $("body").find("ul.Bread_crumb").removeClass().addClass("Bread_crumb");
+        div_to_add = $("body").find("ul.Bread_crumb").first();
+        div_to_add.prepend(adddiv);
+        div_to_add.removeClass().addClass("Bread_crumb");
+      }
+      // U-NEXTの場合
+      else if(url.indexOf(baseurl_unext) != -1)
+      {
+        if(url.indexOf("?") != -1)
+        {
+          url = url.substr(0, url.indexOf("?"));
+        }
+        div_to_add = $("body").find("div.lay-main__inner").first();
+        div_to_add.prepend(adddiv);
+        // デフォルトはリンクに色がついてないので分かりにくい
+        var scr = '<style type="text/css">\n a.actress_link { color:#D21577; }\n a.actress_link:hover { text-decoration:underline; } </style>';
+        div_to_add.prepend(scr);
+      }
+      // FALENOの場合
+      else if(url.indexOf(baseurl_faleno) != -1)
+      {
+        div_to_add = $("body").find("section.bread").first();
+        div_to_add.prepend(adddiv);
+        // デフォルトはリンクに色がついてないので分かりにくい
+        var scr = '<style type="text/css">\n a.actress_link { color:#D21577; }\n a.actress_link:hover { text-decoration:underline; } </style>';
+        div_to_add.prepend(scr);
       }
       // Perfect-Gの場合
       else if(url.indexOf(baseurl_perfectg) != -1)
       {
-        // 個別ページのみ対応
-        if(url.indexOf(perfectgurl_detail) != -1)
+        // 女優まとめページのみ対応
+        if(output == "actress")
         {
-          // 女優まとめページのみ対応
-          if(output == "actress")
+          // detail
+          if(url.indexOf(perfectgurl_detail) != -1)
           {
-            $("body").find("div.co_ww").first().prepend(adddiv);
+            div_to_add = $("body").find("div.co_ww").first();
+            div_to_add.prepend(adddiv);
           }
         }
       }
       // 舞ワイフの場合
       else if(url.indexOf(baseurl_mywife) != -1)
       {
-        // 個別ページのみ対応
-        if(url.indexOf(mywifeurl_detail) != -1)
+        // 女優まとめページのみ対応
+        if(output == "actress")
         {
-          // 女優まとめページのみ対応
-          if(output == "actress")
+          // detail
+          if(url.indexOf(mywifeurl_detail) != -1)
           {
-            $("body").find("div.model01").first().prepend(adddiv);
-            $("body").find("div.model01").first().attr("style", "color: white");
+            div_to_add = $("body").find("div.model01").first();
+            div_to_add.prepend(adddiv);
+            div_to_add.attr("style", "color: white");
           }
         }
       }
       // RealFileの場合
       else if(url.indexOf(baseurl_realfile) != -1)
       {
-        // 個別ページのみ対応
-        if(url.indexOf(realfileurl_teigaku_detail) != -1 || url.indexOf(realfileurl_tanpin_detail) != -1)
+        // 女優まとめページのみ対応
+        if(output == "actress")
         {
-          // 女優まとめページのみ対応
-          if(output == "actress")
+          // detail
+          if(url.indexOf(realfileurl_teigaku_detail) != -1 || url.indexOf(realfileurl_tanpin_detail) != -1)
           {
-            $("body").find("div#gallery_girl_intro").prepend(adddiv);
+            div_to_add = $("body").find("div#gallery_girl_intro");
+            div_to_add.prepend(adddiv);
+          }
+        }
+      }
+      // HimeMixの場合
+      else if(url.indexOf(baseurl_himemix) != -1)
+      {
+        // 女優まとめページのみ対応
+        if(output == "actress")
+        {
+          // detail
+          if(url.indexOf(himemixurl_teigaku_detail) != -1 || url.indexOf(himemixurl_tanpin_detail) != -1)
+          {
+            div_to_add = $("body").find("div.movie_box").first();
+            div_to_add.prepend(adddiv);
+          }
+        }
+      }
+      // GIRL'S BLUEの場合
+      else if(url.indexOf(baseurl_girlsblue) != -1)
+      {
+        // 女優まとめページのみ対応
+        if(output == "actress")
+        {
+          div_to_add = $("body").find("div#wrapper");
+          div_to_add.prepend(adddiv);
+        }
+      }
+      // Happy Fishの場合
+      else if(url.indexOf(baseurl_happyfish) != -1)
+      {
+        // 女優まとめページのみ対応
+        if(output == "actress")
+        {
+          div_to_add = $("body").find("div#wrapper");
+          div_to_add.prepend(adddiv);
+        }
+      }
+      // Tokyo247の場合
+      else if(url.indexOf(baseurl_tokyo247) != -1)
+      {
+        // 女優まとめページのみ対応
+        if(output == "actress")
+        {
+          // detail
+          if(url.indexOf(tokyo247url_detail) != -1)
+          {
+            div_to_add = $("body").find("div.main").first();
+            div_to_add.prepend(adddiv);
           }
         }
       }
       // FC2の場合
       else if(url.indexOf(baseurl_fc2) != -1)
       {
-        // 個別ページのみ対応
-        if(url.indexOf(fc2url_detail) != -1)
+        // 女優まとめページのみ対応
+        if(output == "actress")
         {
-          // 女優まとめページのみ対応
-          if(output == "actress")
+          // detail
+          if(url.indexOf(fc2url_detail) != -1)
           {
-            $("body").find("div.items_article_left").first().prepend(adddiv);
+            div_to_add = $("body").find("div.items_article_left").first();
+            div_to_add.prepend(adddiv);
           }
         }
       }
       // デジグラ、LOVEPOPの場合
       else if(url.indexOf(baseurl_digigra) != -1 || url.indexOf(baseurl_lovepop) != -1)
       {
-          // 女優まとめページのみ対応
-          if(output == "actress")
-          {
-            $("body").find("div.container").first().prepend(adddiv);
-          }
+        // 女優まとめページのみ対応
+        if(output == "actress")
+        {
+          div_to_add = $("body").find("div.container").first();
+          div_to_add.prepend(adddiv);
+        }
+      }
+      // 色眼鏡の場合
+      else if(url.indexOf(baseurl_iromegane) != -1)
+      {
+        // 女優まとめページのみ対応
+        if(output == "actress")
+        {
+          div_to_add = $("body").find("div#salix-main-section");
+          div_to_add.prepend(adddiv);
+        }
+      }
+      // S-Cuteの場合
+      else if(url.indexOf(baseurl_scute) != -1)
+      {
+        // 女優まとめページのみ対応
+        if(output == "actress")
+        {
+          div_to_add = $("body").find("div.wrapper").first();
+          div_to_add.prepend(adddiv);
+        }
+      }
+      // AVEの場合
+      else if(url.indexOf(baseurl_aventertainments) != -1)
+      {
+        // 女優まとめページのみ対応
+        if(output == "actress")
+        {
+          div_to_add = $("body").find("div.main").first();
+          div_to_add.prepend(adddiv);
+        }
       }
       // カリビアンコムの場合
       else if(url.indexOf(baseurl_carib) != -1)
@@ -188,7 +365,8 @@
         // 女優まとめページのみ対応
         if(output == "actress")
         {
-          $("body").find("div#main").prepend(adddiv);
+          div_to_add = $("body").find("div#main");
+          div_to_add.prepend(adddiv);
         }
       }
       // 一本道の場合
@@ -197,14 +375,38 @@
         // 女優まとめページのみ対応
         if(output == "actress")
         {
-          $("body").find("div.contents").first().prepend(adddiv);
+          div_to_add = $("body").find("div.contents").first();
+          div_to_add.prepend(adddiv);
         }
       }
+      // HEYZOの場合
+      else if(url.indexOf(baseurl_heyzo) != -1)
+      {
+        // 女優まとめページのみ対応
+        if(output == "actress")
+        {
+          div_to_add = $("body").find("div#movie");
+          div_to_add.prepend(adddiv);
+        }
+      }
+      // 東京熱の場合
+      else if(url.indexOf(baseurl_tokyohot) != -1)
+      {
+        // 女優まとめページのみ対応
+        if(output == "actress")
+        {
+          div_to_add = $("body").find("div#main");
+          div_to_add.prepend(adddiv);
+        }
+      }
+      // Getchuの場合
       else if(url.indexOf(baseurl_getchu) != -1)
       {
+        // 女優まとめページのみ対応
         if(output = "actress")
         {
-          $("body").find("table.info_bar").first().prepend(adddiv);
+          div_to_add = $("body").find("table.info_bar").first();
+          div_to_add.prepend(adddiv);
         }
       }
       // Twitterの場合
@@ -217,7 +419,8 @@
             var id = $(this).attr("data-testid");
             if(id == "UserDescription")
             {
-              $(this).prepend(adddiv);
+              div_to_add = $(this);
+              div_to_add.prepend(adddiv);
               return false;
             }
           });
@@ -239,6 +442,7 @@
         var ivdiv = '<div id="iv_works" style="visibility:hidden">----\n<br>**イメージ作品\n<br></div>';
         var omnidiv = '<div id="omni_works" style="visibility:hidden">----\n<br>**総集編作品\n<br></div>';
         var adultsitediv = '<div id="adultsite_works" style="visibility:hidden">----\n<br>**アダルトサイト\n<br></div>';
+        var exdvddiv = '<div id="exdvd_works" style="visibility:hidden">----\n<br>**その他作品(DVD・BD)\n<br></div>';
         var exbroadcastdiv = '<div id="exbroadcast_works" style="visibility:hidden">----\n<br>**その他作品(配信系)\n<br></div>';
         var doujindiv = '<div id="doujin_works" style="visibility:hidden">----\n<br>**同人サークル作品\n<br></div>';
         var twitterdiv = '<div id="twitter_part" style="visibility:hidden">----\n**Twitter\n</div>';
@@ -250,13 +454,14 @@
           {
             var joyutitle = $("title").text();
             joyutitle = joyutitle.substr(0, joyutitle.indexOf("-") - 1);
+            var joyuname = joyutitle.substr(0, joyutitle.indexOf("("));
             joyutitle = joyutitle.replace("(", "（");
             joyutitle = joyutitle.replace(")", "）");
             var joyuurl = url;
             var joyuurllatter = joyuurl.substr(joyuurl.indexOf("id="));
             joyuurllatter = joyuurllatter.substr(0, joyuurllatter.indexOf("/")) + "/sort=date/";
             joyuurl = joyuurl.substr(0, joyuurl.indexOf("id=")) + joyuurllatter;
-            joyutitle = "*[[" + joyutitle + ">" + joyuurl + "]]";
+            joyutitle = "*[[" + '<a class="actress_link" href="http://sougouwiki.com/d/' +EscapeEUCJP(joyuname) + '" target="_blank">' + joyutitle + '</a>' + ">" + joyuurl + "]]";
             $("body").find("div#dmm2ssw").append(joyutitle);
           }
           $("body").find("div#dmm2ssw").append(basicdiv);
@@ -265,13 +470,18 @@
           $("body").find("div#dmm2ssw").append(omnidiv);
           $("body").find("div#dmm2ssw").append(adultsitediv);
         }
-        // MGS/Perfect-G/舞ワイフ/RealFile/FC2/デジグラ/LOVEPOPの場合は「アダルトサイト」のみ
-        else if(url.indexOf(baseurl_mgs) != -1 || url.indexOf(baseurl_perfectg) != -1 || url.indexOf(baseurl_mywife) != -1 || url.indexOf(baseurl_realfile) != -1 || url.indexOf(baseurl_fc2) != -1 || url.indexOf(baseurl_digigra) != -1 || url.indexOf(baseurl_lovepop) != -1)
+        // MGS/U-NEXT/FALENO/Perfect-G/舞ワイフ/RealFile/HimeMix/Happy Fish/Tokyo247/FC2/デジグラ/LOVEPOP/色眼鏡/GIRL'S BLUE/S-Cuteの場合は「アダルトサイト」のみ
+        else if(url.indexOf(baseurl_mgs) != -1 || url.indexOf(baseurl_unext) != -1 || url.indexOf(baseurl_faleno) != -1 || url.indexOf(baseurl_perfectg) != -1 || url.indexOf(baseurl_mywife) != -1 || url.indexOf(baseurl_realfile) != -1 || url.indexOf(baseurl_himemix) != -1  || url.indexOf(baseurl_girlsblue) != -1 || url.indexOf(baseurl_happyfish) != -1 || url.indexOf(baseurl_tokyo247) != -1 || url.indexOf(baseurl_fc2) != -1 || url.indexOf(baseurl_digigra) != -1 || url.indexOf(baseurl_lovepop) != -1 || url.indexOf(baseurl_iromegane) != -1 || url.indexOf(baseurl_scute) != -1)
         {
           $("body").find("div#dmm2ssw").append(adultsitediv);
         }
-        // カリビアンコムと一本道の場合は「その他作品(配信系)」のみ
-        else if(url.indexOf(baseurl_carib) != -1 || url.indexOf(baseurl_pondotv) != -1)
+        // AVEの場合は「その他作品(DVD・BD)」のみ
+        else if(url.indexOf(baseurl_aventertainments) != -1)
+        {
+       $("body").find("div#dmm2ssw").append(exdvddiv);
+        }
+        // カリビアンコム/一本道/HEYZO/東京熱の場合は「その他作品(配信系)」のみ
+        else if(url.indexOf(baseurl_carib) != -1 || url.indexOf(baseurl_pondotv) != -1 || url.indexOf(baseurl_heyzo) != -1 || url.indexOf(baseurl_tokyohot) != -1)
         {
           $("body").find("div#dmm2ssw").append(exbroadcastdiv);
         }
@@ -289,11 +499,13 @@
       if (url.indexOf(baseurl_dmm) != -1) {
         // detail
         if (url.indexOf(url_details) != -1) {
+          is_detail_page = true;
           send_to_parse();
           return true;
         }
         // list search
         else if (url.indexOf(url_list) != -1 || url.indexOf(url_search) != -1) {
+          is_detail_page = false;
           $("p.tmb").each(function () {
             var href = $(this).find("a").attr("href");
             console.log(href);
@@ -316,12 +528,14 @@
         // detail
         if(url.indexOf(mgsurl_detail) != -1)
         {
+          is_detail_page = true;
           send_to_parse();
           return true;
         }
         // list
         else if(url.indexOf(mgsurl_search) != -1)
         {
+          is_detail_page = false;
           $("div.search_list").find("li").each( function() {
             var href = $(this).children("a").attr("href");
             if(href.indexOf(mgsurl_detail) != -1)
@@ -340,16 +554,78 @@
           });
         }
       }
+      // U-NEXTの場合
+      else if(url.indexOf(baseurl_unext) != -1)
+      {
+        // detail
+        if(url.indexOf(unexturl_detail) != -1)
+        {
+          is_detail_page = true;
+          send_to_parse();
+          return true;
+        }
+        // list
+        else if(url.indexOf(unexturl_list) != -1)
+        {
+          is_detail_page = false;
+          $("article.ui-item-a--list-collection a").each( function () {
+            var href = $(this).attr("href");
+            if(href.indexOf(unexturl_detail) != -1)
+            {
+              href = "https://video.hnext.jp" + href;
+              if(output == "label")
+              {
+                link_list.unshift(href);
+              }
+              else
+              {
+                link_list.push(href);
+              }
+            }
+          });
+        }
+      }      // FALENOの場合
+      else if(url.indexOf(baseurl_faleno) != -1)
+      {
+        // detail
+        if(url.indexOf(falenourl_detail) != -1)
+        {
+          is_detail_page = true;
+          is_search_release_with_wiki = true;
+          send_to_parse();
+          return true;
+        }
+        // list/ actress
+        else if(url.indexOf(falenourl_list) != -1 || url.indexOf(falenourl_actress) != -1)
+        {
+          is_detail_page = false;
+          $("div.waku_kanren01").each( function() {
+            var href = $(this).find("a").first().attr("href");
+            
+            if(href.indexOf(falenourl_detail) != -1)
+            {
+              if(output == "label")
+              {
+                link_list.unshift(href);
+              }
+              else
+              {
+                link_list.push(href);
+              }
+            }
+          });
+        }
+      }
       // Perfect-Gの場合
       else if(url.indexOf(baseurl_perfectg) != -1)
       {
         // 女優まとめページのみ対応
         if(output == "actress")
         {
-          // 個別ページのみ対応
+          // detail
           if(url.indexOf(perfectgurl_detail) != -1)
           {
-            is_search_release_with_wiki = true;
+            is_detail_page = true;
             send_to_parse();
             return true;
           }
@@ -361,9 +637,10 @@
         // 女優まとめページのみ対応
         if(output == "actress")
         {
-          // 個別ページのみ対応
+          // detail
           if(url.indexOf(mywifeurl_detail) != -1)
           {
+            is_detail_page = true;
             is_search_release_with_wiki = true;
             send_to_parse();
             return true;
@@ -376,9 +653,74 @@
         // 女優まとめページのみ対応
         if(output == "actress")
         {
-          // 個別ページのみ対応
+          // detail
           if(url.indexOf(realfileurl_teigaku_detail) != -1 || url.indexOf(realfileurl_tanpin_detail) != -1)
           {
+            is_detail_page = true;
+            is_search_release_with_wiki = true;
+            send_to_parse();
+            return true;
+          }
+        }
+      }
+      // HimeMixの場合
+      else if(url.indexOf(baseurl_himemix) != -1)
+      {
+        // 女優まとめページのみ対応
+        if(output == "actress")
+        {
+          // detail
+          if(url.indexOf(himemixurl_teigaku_detail) != -1 || url.indexOf(himemixurl_tanpin_detail) != -1)
+          {
+            is_detail_page = true;
+            is_search_release_with_wiki = true;
+            send_to_parse();
+            return true;
+          }
+        }
+      }
+      // GIRL'S BLUEの場合
+      else if(url.indexOf(baseurl_girlsblue) != -1)
+      {
+        // 女優まとめページのみ対応
+        if(output == "actress")
+        {
+          // detail
+          if(url.indexOf(girlsblueurl_teigaku_detail) != -1 || url.indexOf(girlsblueurl_tanpin_detail) != -1)
+          {
+            is_detail_page = true;
+            is_search_release_with_wiki = true;
+            send_to_parse();
+            return true;
+          }
+        }
+      }
+      // Happy Fishの場合
+      else if(url.indexOf(baseurl_happyfish) != -1)
+      {
+        // 女優まとめページのみ対応
+        if(output == "actress")
+        {
+          // detail
+          if(url.indexOf(happyfishurl_teigaku_detail) != -1 || url.indexOf(happyfishurl_tanpin_detail) != -1)
+          {
+            is_detail_page = true;
+            is_search_release_with_wiki = true;
+            send_to_parse();
+            return true;
+          }
+        }
+      }
+      // Happy Fishの場合
+      else if(url.indexOf(baseurl_tokyo247) != -1)
+      {
+        // 女優まとめページのみ対応
+        if(output == "actress")
+        {
+          // detail
+          if(url.indexOf(tokyo247url_detail) != -1)
+          {
+            is_detail_page = true;
             is_search_release_with_wiki = true;
             send_to_parse();
             return true;
@@ -391,48 +733,185 @@
         // 女優まとめページのみ対応
         if(output == "actress")
         {
-          // 個別ページのみ対応
+          // detail
           if(url.indexOf(fc2url_detail) != -1)
           {
+            is_detail_page = true;
             send_to_parse();
             return true;
           }
         }
       }
-      // デジグラ/LOVEPOPの場合
-      else if(url.indexOf(baseurl_digigra) != -1 || url.indexOf(baseurl_lovepop) != -1)
+      // デジグラの場合
+      else if(url.indexOf(baseurl_digigra) != -1)
       {
         // 女優まとめページのみ対応
         if(output == "actress")
         {
-          // PPV動画ページのとき
+          // ppv detail
           if(url.indexOf(digiloveurl_detail) != -1)
           {
+            is_detail_page = true;
             send_to_parse();
             return true;
           }
-          // 月額モデルページ/PPVのリストページのとき
+          // monthly actress/ PPV list
           else if(url.indexOf(digiloveurl_monthly) != -1 || url.indexOf(digiloveurl_list) != -1)
           {
+            is_detail_page = false;
             $("div.article-image").each(function() {
               var href = $(this).find("a").attr("href");
-              if(href.indexOf("https://digi-gra.net/") == -1)
+              if(href.indexOf(baseurl_digigra) == -1)
               {
                 href = "https://digi-gra.net/" + href;
               }
-              url_list.push(href);
+              link_list.push(href);
             });
           }
-          // 女優ページのとき
+          // actress
           else if(url.indexOf(digiloveurl_actress) != -1)
           {
+            is_detail_page = false;
             $("div.ppv-product-introduction-and-review-image").each(function() {
               var href = $(this).find("a").attr("href");
-              if(href.indexOf("https://digi-gra.net/") == -1)
+              if(href.indexOf(baseurl_digigra) == -1)
               {
                 href = "https://digi-gra.net/" + href;
               }
-              url_list.push(href);
+              link_list.push(href);
+            });
+          }
+        }
+      }
+      // LOVEPOPの場合
+      if(url.indexOf(baseurl_lovepop) != -1)
+      {
+        // 女優まとめページのみ対応
+        if(output == "actress")
+        {
+          // ppv detail
+          if(url.indexOf(digiloveurl_detail) != -1)
+          {
+            is_detail_page = true;
+            send_to_parse();
+            return true;
+          }
+          // monthly actress/ PPV list
+          else if(url.indexOf(digiloveurl_monthly) != -1 || url.indexOf(digiloveurl_list) != -1)
+          {
+            is_detail_page = false;
+            $("div.article-image").each(function() {
+              var href = $(this).find("a").attr("href");
+              if(href.indexOf(baseurl_lovepop) == -1)
+              {
+                href = "https://lovepop.net/" + href;
+              }
+              link_list.push(href);
+            });
+          }
+          // actress
+          else if(url.indexOf(digiloveurl_actress) != -1)
+          {
+            is_detail_page = false;
+            $("div.ppv-product-introduction-and-review-image").each(function() {
+              var href = $(this).find("a").attr("href");
+              if(href.indexOf(baseurl_lovepop) == -1)
+              {
+                href = "https://lovepop.net/" + href;
+              }
+              link_list.push(href);
+            });
+          }
+        }
+      }
+      // 色眼鏡の場合
+      else if(url.indexOf(baseurl_iromegane) != -1)
+      {
+        // 女優まとめページのみ対応
+        if(output == "actress")
+        {
+          // detail
+          if(url.indexOf(iromeganeurl_iro_detail) != -1 || url.indexOf(iromeganeurl_faily_detail) != -1)
+          {
+            is_detail_page = true;
+            send_to_parse();
+            return true;
+          }
+          // actress pages
+          else if(url.indexOf(iromeganeurl_actress) != -1)
+          {
+            is_detail_page = false;
+            $("a").each( function() {
+              var href = $(this).attr("href");
+              if(href.indexOf(iromeganeurl_iro_detail) != -1 || url.indexOf(iromeganeurl_faily_detail) != -1)
+              {
+                var added = false;
+                for(var i = 0; i < link_list.length; i++)
+                {
+                  if(link_list[i].match(href))
+                  {
+                    added = true;
+                    break;
+                  }
+                }
+                if(!added)
+                {
+                  link_list.push(href);
+                }
+              }
+            });
+          }
+        }
+      }
+      // S-Cuteの場合
+      else if(url.indexOf(baseurl_scute) != -1)
+      {
+        // 女優まとめページのみ対応
+        if(output == "actress")
+        {
+          // detial
+          if(url.indexOf(scuteurl_detail) != -1)
+          {
+            is_detail_page = true;
+            send_to_parse();
+            return true;
+          }
+          // actress
+          else if(url.indexOf(scuteurl_actress) != -1)
+          {
+            $("article.contents").children("a").each( function() {
+              var href = $(this).attr("href");
+              if(href.indexOf(scuteurl_detail) != -1)
+              {
+                link_list.push(href);
+              }
+            });
+          }
+        }
+      }
+      // AVEの場合
+      else if(url.indexOf(baseurl_aventertainments) != -1)
+      {
+        // 女優まとめページのみ対応
+        if(output == "actress")
+        {
+          // detail
+          if(url.indexOf(aventertainmentsurl_detail) != -1)
+          {
+            is_detail_page = true;
+            send_to_parse();
+            return true;
+          }
+          // list pages
+          else
+          {
+            is_detail_page = false;
+            $("div.list-cover").find("a").each( function() {
+              var href = $(this).attr("href");
+              if(href.indexOf(aventertainmentsurl_detail) != -1)
+              {
+                link_list.push(href);
+              }
             });
           }
         }
@@ -446,19 +925,20 @@
           // detail
           if(url.indexOf(cariburl_detail) != -1)
           {
+            is_detail_page = true;
             send_to_parse();
             return true;
           }
           // list search searchact
           else if(url.indexOf(cariburl_list) != -1 || url.indexOf(cariburl_search) != -1 || url.indexOf(cariburl_searchact) != -1)
           {
+            is_detail_page = false;
             $("div.grid-item").find("div.meta-title").each( function() {
               var href = $(this).children("a").attr("href");
               if(href.indexOf(cariburl_detail) != -1)
               {
                 href = "https://www.caribbeancom.com" + href;
                 link_list.push(href);
-                return false;
               }
             });
           }
@@ -473,19 +953,89 @@
           // detail
           if(url.indexOf(pondotvurl_detail) != -1)
           {
+            is_detail_page = true;
             send_to_parse();
             return true;
           }
           // list search
           else if(url.indexOf(pondotvurl_list) != -1 || url.indexOf(pondotvurl_search) != -1)
           {
+            is_detail_page = false;
             $("div.grid-item").find("a.entry").each( function() {
               var href = $(this).attr("href");
               if(href.indexOf(pondotvurl_detail) != -1)
               {
                 href = "https://www.1pondo.tv" + href;
                 link_list.push(href);
-                return false;
+              }
+            });
+          }
+        }
+      }
+      // HEYZOの場合
+      else if(url.indexOf(baseurl_heyzo) != -1)
+      {
+        // 女優まとめページのみ対応
+        if(output == "actress")
+        {
+          // detail
+          if(url.indexOf(heyzourl_detail) != -1)
+          {
+            is_detail_page = true;
+            send_to_parse();
+            return true;
+          }
+          // list search
+          else if(url.indexOf(heyzourl_list) != -1 || url.indexOf(heyzourl_search) != -1)
+          {
+            is_detail_page = false;
+            $("div.movie").find("a.actor").each( function() {
+              var href = $(this).attr("href");
+              if(href.indexOf(heyzourl_detail) != -1)
+              {
+                href = "https://www.heyzo.com" + href;
+                link_list.push(href);
+              }
+            });
+          }
+        }
+      }
+      // 東京熱の場合
+      else if(url.indexOf(baseurl_tokyohot) != -1)
+      {
+        // 女優まとめページのみ対応
+        if(output == "actress")
+        {
+          // detail
+          if(url.indexOf(tokyohoturl_detail) != -1)
+          {
+            is_detail_page = true;
+            send_to_parse();
+            return true;
+          }
+          // list search
+          else if(url.indexOf(tokyohoturl_list) != -1)
+          {
+            is_detail_page = false;
+            $("li.detail").children("a").each( function() {
+              var href = $(this).attr("href");
+              if(href.indexOf(tokyohoturl_detail) != -1)
+              {
+                href = "https://my.tokyo-hot.com/" + href;
+                link_list.push(href);
+              }
+            });
+          }
+          // actress
+          else if(url.indexOf(tokyohoturl_actress) != -1)
+          {
+            is_detail_page = false;
+            $("div.related").find("a").each( function() {
+              var href = $(this).attr("href");
+              if(href.indexOf(tokyohoturl_detail) != -1)
+              {
+                href = "https://my.tokyo-hot.com/" + href;
+                link_list.push(href);
               }
             });
           }
@@ -497,6 +1047,7 @@
         // 女優まとめページのみ対応
         if(output == "actress")
         {
+          is_detail_page = true;
           send_to_parse();
           return true;
         }
@@ -507,6 +1058,7 @@
         // 女優まとめページのみ対応
         if(output == "actress")
         {
+          is_detail_page = true;
           send_to_parse();
           return true;
         }
@@ -518,7 +1070,6 @@
     // 作品ページを解析
     else if (msg.type == "parse_detail") {
       url = msg.url;
-      console.log("url: " + url);
       output = msg.output;
       is_search_wiki = msg.is_search_wiki;
       is_search_release_with_wiki = msg.is_search_release_with_wiki;
@@ -593,13 +1144,17 @@
         // たまにfullがない場合がある
         if (!largeimg) {
           largeimg = smallimg;
-          // たまにsmallimgにjp.jpgが使われている
-          if (smallimg.indexOf("jp.jpg") != -1) {
-            smallimg = smallimg.replace("jp.jpg", "js.jpg");
+          // たまにsmallimgにjs.jpgが使われている
+          if (smallimg.indexOf("jp.jpg") != -1 || smallimg.indexOf("js.jpg") != -1) {
+            // 一旦、js.jpgはjp.jpgに変換する
+            smallimg = smallimg.replace("js.jpg", "jp.jpg");
+            // 正方形は147px指定
+            smallimg = "&ref(" + smallimg + ", 147)";
           }
           console.log("smallimg: " + smallimg);
           console.log("largeimg: " + largeimg);
         }
+        var castlist = "";
         var more_cast = false;
         console.log("url: " + url);
         console.log("title: " + title);
@@ -607,7 +1162,6 @@
         $("td.nw").each(function () {
           var text = $(this).text();
           if (text.length > 0) {
-            console.log("text:" + text);
             // 発売日
             if (text.indexOf("発売日") != -1) {
               release = $(this).next().text();
@@ -722,41 +1276,62 @@
               console.log("series: " + series);
             // 出演者
             } else if (text.indexOf("出演者") != -1) {
-              cast = $(this).next().text();
-              cast = cast.replace('\n', '');
-              cast = cast.replace('\t', '');
+              castlist = $(this).next().text();
+              castlist = castlist.replace(/\u000a/g, '');
               // 「▼すべてを表示」など、出演者探索ができるものはajaxで取得
               if (use_ajax) {
                 $.ajax({
                   type: "GET",
                   url: ajax_url,
                   success: function (msg) {
-                    cast = msg;
-                    cast = cast.replace(/<("[^"]*"|'[^']*'|[^'">])*>/g, '');
+                    castlist = msg;
+                    castlist = castlist.replace(/<("[^"]*"|'[^']*'|[^'">])*>/g, '');
+                    castlist = castlist.replace(/（/g, "(");
+                    castlist = castlist.replace(/）/g, ")");
+                    console.log("castlist: " + castlist);
                     // 女優の別名表記を削除
-                    while(cast.indexOf("（") != -1)
+                    while(castlist.indexOf("(") != -1)
                     {
-                      cast = cast.substr(0, cast.indexOf("（")) + cast.substr(cast.indexOf("）") + 1);
+                      var cl = castlist;
+                      castlist = cl.substr(0, cl.indexOf("(")) + cl.substr(cl.indexOf(")") + 1);
                     }
-                    cast = "[[" + cast + "]]";
-                    cast = cast.replace(/\r?\n/g, "]]／[[");
-                    cast = cast.replace("[[]]／[[", "[[");
-                    cast = cast.replace("]]／[[]]", "]]");
+                    castlist = castlist.replace(/\r?\n/g, ",");
+                    if (castlist.indexOf(",") == 0) {
+                      castlist = castlist.substr(1);
+                    }
+                    if (castlist.lastIndexOf(",") == castlist.length - 1) {
+                      castlist = castlist.substr(0, castlist.length - 1);
+                    }
+                    cast = castlist.split(",");
                     console.log("cast: " + cast);
                     if(label == "----")
                     {
                        label = maker;
                     }
                     var suburl = "";
-                    send_detail_message(is_search_wiki, baseurl_dmm);
+                    send_detail_message(is_search_wiki, baseurl_dmm, url);
                   }
                 });
               } else {
-                cast = cast.replace(/<("[^"]*"|'[^']*'|[^'">])*>/g, '');
-                cast = "[[" + cast + "]]";
-                cast = cast.replace(/\r?\n/g, "]]／[[");
-                cast = cast.replace("[[]]／[[", "[[");
-                cast = cast.replace("]]／[[]]", "]]");
+                castlist = castlist.replace(/<("[^"]*"|'[^']*'|[^'">])*>/g, '');
+                // 女優の別名表記を削除
+                castlist = castlist.replace(/（/g, "(");
+                castlist = castlist.replace(/）/g, ")");
+                console.log("castlist: " + castlist);
+                // 女優の別名表記を削除
+                while(castlist.indexOf("(") != -1)
+                {
+                  var cl = castlist;
+                  castlist = cl.substr(0, cl.indexOf("(")) + cl.substr(cl.indexOf(")") + 1);
+                }
+                castlist = castlist.replace(/\r?\n/g, ",");
+                if (castlist.indexOf(",") == 0) {
+                  castlist = castlist.substr(1);
+                }
+                if (castlist.lastIndexOf(",") == castlist.length - 1) {
+                  castlist = castlist.substr(0, castlist.length - 1);
+                }
+                cast = castlist.split(",");
                 console.log("cast: " + cast);
               }
             // 名前
@@ -834,12 +1409,7 @@
         // 出演者探索ができないとき
         if (!use_ajax) {
           var suburl = "";
-          // 女優の別名表記を削除
-          while(cast.indexOf("（") != -1)
-          {
-            cast = cast.substr(0, cast.indexOf("（")) + cast.substr(cast.indexOf("）") + 1);
-          }
-          send_detail_message(is_search_wiki, baseurl_dmm);
+          send_detail_message(is_search_wiki, baseurl_dmm, url);
         }
       }
       // MGSの場合
@@ -850,6 +1420,7 @@
         title = title.substr(0, title.indexOf("」"));
         console.log("title: " + title);
         is_adultsite = true;
+        is_exdvd = false;
         is_exbroadcast = false;
         is_omnibus = false;
         smallimg = $("img.enlarge_image").attr("src");
@@ -858,6 +1429,10 @@
         {
           smallimg = smallimg.replace("pb_p_", "pb_t1_");
         }
+        else if(smallimg.indexOf("pf_o1_") != -1)
+        {
+          smallimg = "&ref(" + smallimg + ", 147)";
+        }
         largeimg = $("a#EnlargeImage").attr("href");
         $("th").each( function() {
           var text = $(this).text();
@@ -865,7 +1440,7 @@
           {
             anothername = $(this).next().text();
             anothername = anothername.replace(/<("[^"]*"|'[^']*'|[^'">])*>/g, '');
-            cast = "[[ ]]";
+            cast = [];
           }
           else if(text.indexOf("メーカー") != -1)
           {
@@ -952,7 +1527,119 @@
         is_limited = false;
         is_dod = false;
         is_title_fixed = false;
-        send_detail_message(is_search_wiki, baseurl_mgs);
+        send_detail_message(is_search_wiki, baseurl_mgs, url);
+      }
+      // U-NEXTの場合
+      else if(url.indexOf(baseurl_unext) != -1)
+      {
+        title = $("h1.ttl-subinfo__text").text();
+        title = title.replace(/\u3000/g, " "); // 全角スペースを半角スペースに
+        hinban = url.substr(url.lastIndexOf("/") + 1);
+        prefix = hinban.replace(/[0-9]/g, "");
+        number = parseInt(hinban.replace(/[^0-9]/g, ""));
+        release = $("span.ttl-subinfo__text").text();
+        release = release.replace("年", "/");
+        release = release.replace("月", "");
+        broadcast_release = release;
+        console.log("release: " + release);
+        largeimg = $("img.ttl-package__thumb").attr("src");
+        if(largeimg.indexOf("?") != -1)
+        {
+          largeimg = largeimg.substr(0, largeimg.indexOf("?"));
+        }
+        smallimg = "&ref(" + largeimg.replace(".jpg", "_F.jpg") + ", 147)";
+        $("h2.ui-hd--3").next().find("dt").each( function() {
+          var text = $(this).text();
+          if(text.indexOf("女優") != -1)
+          {
+            cast = [];
+            $(this).parent().find("dd").each( function() {
+              cast.push($(this).text());
+            });
+            console.log("cast: " + cast);
+          }
+          else if(text.indexOf("監督") != -1)
+          {
+            director = $(this).next().text();
+            console.log("director: " + director);
+          }
+          else if(text.indexOf("ジャンル") != -1)
+          {
+            $(this).parent().find("dd").each( function() {
+              genre.push($(this).text());
+            });
+            console.log("genre: " + genre);
+          }
+          else if(text.indexOf("シリーズ") != -1)
+          {
+            series = $(this).next().text();
+            console.log("series: " + series);
+          }
+          else if(text.indexOf("メーカー") != -1)
+          {
+            label = $(this).next().text();
+            console.log("label: " + label);
+          }
+        });
+        maker = "U-NEXT";
+        release = "";
+        threesize = "";
+        anothername = "";
+        service = "";
+        is_adultsite = true;
+        is_exdvd = false;
+        is_exbroadcast = false;
+        is_omnibus = false;
+        is_iv = false;
+        is_vr = false;
+        send_detail_message(is_search_wiki, baseurl_unext, url);
+      }
+      // FALENOの場合
+      else if(url.indexOf(baseurl_faleno) != -1)
+      {
+        title = $("div.bar02 h2").first().text();
+        title = title.replace(/\u3000/g, " "); // 全角スペースを半角スペースに
+        $("div.box_works01_list span").each(function() {
+          var text = $(this).text();
+          if(text.indexOf("出演女優") != -1)
+          {
+            cast = $(this).next().text().split(",");
+          }
+          else if(text.indexOf("配信開始日") != -1)
+          {
+            broadcast_release = $(this).next().text();
+            console.log("broadcast_release: " + broadcast_release);
+          }
+          else if(text.indexOf("収録時間") != -1)
+          {
+            var dlist = $(this).next().text();
+            duration = parseInt(dlist.replace(/[^0-9]/g, ""));
+            console.log("duration: " + duration);
+          }
+          else if(text.indexOf("発売日") != -1)
+          {
+            release = $(this).next().text();
+            console.log("release: " + release);
+          }
+        });
+        largeimg = $("div.box_works01_img img").first().attr("src");
+        smallimg = "&ref(" + largeimg.replace("_1200", "h1") + ", 147)";
+        maker = "FALENO";
+        label = "";
+        series = "";
+        genre = [];
+        release = "";
+        threesize = "";
+        anothername = "";
+        director = "";
+        service = "";
+        is_adultsite = true;
+        is_exdvd = false;
+        is_exbroadcast = false;
+        is_omnibus = false;
+        is_iv = false;
+        is_vr = false;
+        send_detail_message(is_search_wiki, baseurl_faleno, url);
       }
       // Perfect-Gの場合
       else if(url.indexOf(baseurl_perfectg) != -1)
@@ -964,9 +1651,9 @@
           {
             title = $(this).text();
             title = title.substr(0, title.indexOf("-"));
-            title = title.replace(/\u0020/g, "");
+            title = title.replace(/[^A-Za-z0-9]/g, "");
             hinban = title;
-            number = parseInt(title.substr(0, title.search(/[a-z]/)));
+            number = parseInt(title.replace(/[^0-9]/g, ""));
             console.log("title: " + title);
             console.log("number: " + number);
             prefix = title.replace(/[0-9]/g, "");
@@ -1020,19 +1707,22 @@
           }
         });
         anothername += " " + age + "歳 " + threesize;
-        smallimg = "&ref(http://www.g-area.com/pg_info_thumb/pg_info_" + prefix + "150_100.jpg, 147)";
-        largeimg = "http://www.g-area.com/img/main/" + prefix + "_320_180.jpg";
+        
+        largeimg = "https://www.g-area.com/img/main/748shoko_320_180.jpg";
+        smallimg = "&ref(https://www.g-area.com/pg_info_thumb/pg_info_" + hinban + "150_100.jpg, 226)";
+        maker = "G-AREA";
         label = "Perfect-G";
-        maker = "";
         series = "";
-        genre = "";
+        genre = [];
+        release = "";
         is_adultsite = true;
+        is_exdvd = false;
         is_exbroadcast = false;
         is_omnibus = false;
         is_iv = false;
         is_vr = false;
-        cast = "";
-        send_detail_message(is_search_wiki, baseurl_perfectg);
+        cast = [];
+        send_detail_message(is_search_wiki, baseurl_perfectg, url);
       }
       // 舞ワイフの場合
       else if(url.indexOf(baseurl_mywife) != -1)
@@ -1075,20 +1765,22 @@
         
         
         largeimg = "http://p02.mywife.cc/girl/0" + num + "/thumb.jpg";
-        smallimg = "&ref(" + largeimg + ", 200)";
+        smallimg = "&ref(" + largeimg + ", 226)";
         
-        label = "舞ワイフ";
-        maker = "";
+        maker = "舞ワイフ";
+        label = "";
         series = "";
-        genre = "";
+        genre = [];
+        release = "";
         is_adultsite = true;
+        is_exdvd = false;
         is_exbroadcast = false;
         is_omnibus = false;
         is_iv = false;
         is_vr = false;
-        cast = "";
+        cast = [];
         duration = 0;
-        send_detail_message(is_search_wiki, baseurl_mywife);
+        send_detail_message(is_search_wiki, baseurl_mywife, url);
       }
       // RealFileの場合
       else if(url.indexOf(baseurl_realfile) != -1)
@@ -1140,22 +1832,257 @@
         }
         console.log("anothername: " + anothername);
         
-        largeimg = "http://p02.mywife.cc/girl/0" + num + "/thumb.jpg";
-        smallimg = "&ref(" + largeimg + ", 147)";
+        largeimg = "https://www.r-file.com/free_photo/" + hinban + "/img2.jpg";
+        smallimg = "&ref(https://www.r-file.com/free_photo/" + hinban + "/img1.jpg, 147)";
         
-        label = "Real File";
-        maker = "";
+        maker = "Real File";
+        label = "";
         series = "";
-        genre = "";
+        genre = [];
+        release = "";
         is_adultsite = true;
+        is_exdvd = false;
         is_exbroadcast = false;
         is_omnibus = false;
         is_iv = false;
         is_vr = false;
-        cast = "";
+        cast = [];
         duration = 0;
-        send_detail_message(is_search_wiki, baseurl_realfile);
+        send_detail_message(is_search_wiki, baseurl_realfile, url);
 
+      }
+      // HimeMixの場合
+      else if(url.indexOf(baseurl_himemix) != -1)
+      {
+        // 定額個別ページの場合
+        if(url.indexOf(himemixurl_teigaku_detail) != -1)
+        {
+          title = $("div.mohime-login").find("h2").first().text();
+          if(title.indexOf("No.") != -1)
+          {
+            number = parseInt(title.replace(/[^0-9]/g, ""));
+            title = title.substr(title.indexOf("No.") + 3);
+            title = title.replace(/[0-9]/g, "");
+            title = title.replace(/\u3000/g, "");
+//          console.log("uni:" + title.codePointAt(0).toString(16));
+            console.log("title: " + title);
+          }
+          $("div.mohime-login").find("p").each( function() {
+            var text = $(this).text();
+            if(text.indexOf("AGE:") != -1 && text.indexOf("T:") != -1)
+            {
+              anothername = title + " ";
+              var agetext = text.substr(text.indexOf("AGE:") + 4);
+              agetext = agetext.substr(0, agetext.indexOf("T:"));
+              agetext = agetext.replace(/[^0-9]/g, "");
+              var age = parseInt(agetext);
+              anothername += age + "歳 ";
+              threesize = text.substr(text.indexOf("T:"));
+              console.log("threesize: " + threesize);
+              anothername += threesize;
+              console.log("anothername: " + anothername);
+            }
+            else if(text.indexOf("配信開始日：") != -1)
+            {
+              release = text.substr(text.indexOf("配信開始日：") + 6);
+              release = release.replace(/-/g, "/");
+              release = release.replace(/[^0-9\/]/g, "");
+              broadcast_release = release;
+              console.log("release: " + release);
+            }
+          });
+        }
+        // 単品個別ページの場合
+        else if(url.indexOf(himemixurl_tanpin_detail) != -1)
+        {
+          title = $("div.model_pr").last().find("h2").text();
+          if(title.indexOf("No.") != -1)
+          {
+            number = parseInt(title.replace(/[^0-9]/g, ""));
+            title = title.substr(title.indexOf("No.") + 3);
+            title = title.replace(/[0-9]/g, "");
+            title = title.replace(/\u3000/g, "");
+//          console.log("uni:" + title.codePointAt(0).toString(16));
+            console.log("title: " + title);
+          }
+          var strong = $("div.model_pr").last().find("h2").next();
+          var text = strong.text();
+          console.log("strong: " + text);
+          if(text.indexOf("AGE:") != -1 && text.indexOf("T:") != -1)
+          {
+            anothername = title + " ";
+            var agetext = text.substr(text.indexOf("AGE:") + 4);
+            agetext = agetext.substr(0, agetext.indexOf("T:"));
+            agetext = agetext.replace(/[^0-9]/g, "");
+            var age = parseInt(agetext);
+            anothername += age + "歳 ";
+            threesize = text.substr(text.indexOf("T:"));
+            strong.find("p").each(function() {
+              threesize = threesize.replace($(this).text(), "");
+            });
+            console.log("threesize: " + threesize);
+            anothername += threesize;
+            console.log("anothername: " + anothername);
+          }
+          strong.find("p").each(function() {
+            var tt = $(this).text();
+            if(tt.indexOf("配信開始日：") != -1)
+            {
+              release = text.substr(text.indexOf("配信開始日：") + 6);
+              release = release.replace($(this).next().text(), "");
+              release = release.replace(/-/g, "/");
+              release = release.replace(/[^0-9\/]/g, "");
+              broadcast_release = release;
+              console.log("release: " + release);
+              return false;
+            }
+          });
+        }
+        // 3サイズ表記がなく、別名が入ってない場合は、タイトルを別名に
+        if(anothername.length == 0)
+        {
+          anothername = title;
+        }
+        var number_for_image = parseInt(url.substr(url.lastIndexOf("/")).replace(/[^0-9]/g, ""));
+        smallimg = "&ref(https://p02.himemix.com/common/thumb/" + ('00000' + number_for_image).slice(-5) + "/00/1.jpg, 226)";
+        largeimg = "http://free.himemix.com/girl/" + ('00000' + number).slice(-5) + "/01.jpg";
+        
+        maker = "HimeMix";
+        label = "";
+        series = "";
+        genre = [];
+        is_adultsite = true;
+        is_exdvd = false;
+        is_exbroadcast = false;
+        is_omnibus = false;
+        is_iv = false;
+        is_vr = false;
+        cast = [];
+        duration = 0;
+        send_detail_message(is_search_wiki, baseurl_himemix, url);
+      }
+      // GIRL'S BLUE/Happy Fishの場合
+      else if(url.indexOf(baseurl_girlsblue) != -1 || url.indexOf(baseurl_happyfish) != -1)
+      {
+        hinban = url.substr(url.lastIndexOf("=") + 1);
+        number = parseInt(hinban.replace(/[^0-9]/g, ""));
+        // 注：画像への直リン禁止
+        largeimg = $("div#gallery_girl_photo").find("img").attr("src");
+        if(url.indexOf(baseurl_girlsblue) != -1)
+        {
+          smallimg = "&ref(https://www.girls-blue.com/free_photo/" + hinban + "/img1.jpg, 147)";
+        }
+        else if(url.indexOf(baseurl_happyfish) != -1)
+        {
+          smallimg = "&ref(https://www.h-fish.com/free_photo/" + hinban + "/img1.jpg, 147)";
+        }
+        var text = $("div#gallery_girl_profile").find("p").text();
+        console.log("text: " + text);
+        if(text.indexOf("名　前：") != -1 && text.indexOf("身　長：") != -1 && text.indexOf("サイズ：") != -1 && (text.indexOf("趣　味：") != -1 || text.indexOf("初自慰：") != -1))
+        {
+          title = text.substr(text.indexOf("名　前：") + 4);
+          title = title.substr(0, title.indexOf("身　長："));
+          title = title.replace(/\u3000/g, "");
+          console.log("uni:" + title.codePointAt(5).toString(16));
+          console.log("title: " + title);
+          anothername = title;
+          threesize = text.substr(text.indexOf("身　長：") + 4);
+          if(text.indexOf("趣　味：") != -1)
+          {
+            threesize = threesize.substr(0, threesize.indexOf("趣　味："));
+          }
+          else if(text.indexOf("初自慰：") != -1)
+          {
+            threesize = threesize.substr(0, threesize.indexOf("初自慰："));
+          }
+          threesize = threesize.replace("サイズ：", "/");
+          threesize = threesize.replace(/[^\/\-()A-Za-z0-9]/g, "");
+          threesize = threesize.replace(/\u0020/g, "");
+          threesize = "T:" + threesize;
+          threesize = threesize.replace(/\//g, " ");
+          console.log("uni:" + threesize.codePointAt(5).toString(16));
+          console.log("threesize: " + threesize);
+          anothername = title + threesize;
+        }
+        text = $("div#movie_gallery").find("div.gallery_discription").text();
+        is_vr = false;
+        if((text.indexOf("動画総分数") != -1 || text.indexOf("動画合計分数") != -1) && text.indexOf("分") != -1)
+        {
+          var dlist = "";
+          if(text.indexOf("動画総分数") != -1)
+          {
+            text.substr(text.indexOf("動画総分数") + 6);
+          }
+          else if(text.indexOf("動画合計分数") != -1)
+          {
+           text.substr(text.indexOf("動画合計分数") + 7);
+          }
+          dlist = dlist.substr(dlist.indexOf("分"));
+          dlist = dlist.replace(/[^0-9]/g, "");
+          duration = parseInt(dlist);
+          if(text.indexOf("VR") != -1)
+          {
+            dlist = text.substr(dlist.indexOf("VR") + 3);
+            dlist = dlist.replace(/[^0-9]/g, "");
+            var vrlength = parseInt(dlist);
+            if(vrlength > 0)
+            {
+               is_vr = true;
+            }
+          }
+        }
+        label = "";
+        series = "";
+        genre = [];
+        release = "";
+        is_adultsite = true;
+        is_exdvd = false;
+        is_exbroadcast = false;
+        is_omnibus = false;
+        is_iv = false;
+        cast = [];
+        if(url.indexOf(baseurl_girlsblue) != -1)
+        {
+          maker = "Girl's Blue";
+          send_detail_message(is_search_wiki, baseurl_girlsblue, url);
+        }
+        else if(url.indexOf(baseurl_happyfish) != -1)
+        {
+          maker = "HAPPY FISH";
+            send_detail_message(is_search_wiki, baseurl_happyfish, url);
+        }
+      }
+      // Tokyo247の場合
+      else if(url.indexOf(baseurl_tokyo247) != -1)
+      {
+        hinban = url.substr(url.indexOf("/ms/") + 4);
+        hinban = hinban.substr(0, hinban.indexOf("/contents"));
+        hinban = hinban.replace(/^a-z0-9]/g, "");
+        prefix = hinban.replace(/[0-9]/g, "");
+        number = parseInt(hinban.replace(/[^0-9]/g, ""));
+        title = $("div.modelname").first().text();
+        cast = title.split(",");
+        anothername = $("div.modelProfile").first().text();
+        anothername = anothername.replace(/\u3000/g, " ");
+        var tags = $("ul.tags").text();
+        tags = tags.replace(/\u000a/g, ",");
+        console.log("genre: " + tags);
+        genre = tags.split(",");
+                                       
+        largeimg = "http://www.tokyo-247.net/ms/601erena/ms_" + hinban + "003.jpg";
+        smallimg = "&ref(http://www.tokyo-247.net/ms/gallery_parts/" + hinban + "_1.jpg, 226)";
+        maker = "Tokyo247";
+        label = "";
+        series = "";
+        genre = [];
+        is_adultsite = true;
+        is_exdvd = false;
+        is_exbroadcast = false;
+        is_omnibus = false;
+        is_iv = false;
+        is_vr = false;
+        duration = 0;
+        send_detail_message(is_search_wiki, baseurl_tokyo247, url);
       }
       // FC2
       else if(url.indexOf(baseurl_fc2) != -1)
@@ -1193,18 +2120,19 @@
             }
           }
         }
-        label = $("section.items_comment_sellerBox").first().find("h4").find("a").text();
-        maker = "";
+        maker = $("section.items_comment_sellerBox").first().find("h4").find("a").text();
+        label = "";
         series = "";
-        genre = "";
+        genre = [];
         is_adultsite = true;
+        is_exdvd = false;
         is_exbroadcast = false;
         is_omnibus = false;
         is_iv = false;
         is_vr = false;
-        cast = "";
+        cast = [];
         duration = 0;
-        send_detail_message(is_search_wiki, baseurl_fc2);
+        send_detail_message(is_search_wiki, baseurl_fc2, url);
       }
       // デジグラ、LOVEPOPの場合
       else if(url.indexOf(baseurl_digigra) != -1 || url.indexOf(baseurl_lovepop) != -1)
@@ -1213,17 +2141,22 @@
         console.log("title: " + title);
         if(url.indexOf(baseurl_digigra) != -1)
         {
-          label = "デジグラ";
+          maker = "デジグラ";
         }
         else
         {
-          label = "LOVEPOP";
+          maker = "LOVEPOP";
         }
+        var castlist = "";
         $("dt").each(function() {
           var text = $(this).text();
           if(text.indexOf("ファイル内容") != -1)
           {
              var dlist = $(this).next().text();
+             if(dlist.indexOf("枚") != -1)
+             {
+               dlist = dlist.substr(dlist.indexOf("枚"));
+             }
              dlist = dlist.replace("時間", ":");
              dlist = dlist.replace("分", ":");
              dlist = dlist.replace("秒", "");
@@ -1254,8 +2187,381 @@
                duration = 0;
              }
           }
+          else if(text.indexOf("モデル名") != -1)
+          {
+            castlist = $(this).next().find("a").first().text();
+            console.log("cast: " + castlist);
+          }
         });
+        
+        genre = $("nav.c--tag-list").text();
+        genre = genre.replace(/\u0020/g, "");
+        genre = genre.replace(/\u0009/g, "");
+        genre = genre.replace(/\u000a/g, ",");
+        genre = genre.replace(/,+/g, ",");
+        if (genre.indexOf(",") == 0) {
+          genre = genre.substr(1);
+        }
+        if (genre.lastIndexOf(",") == genre.length - 1) {
+          genre = genre.substr(0, genre.length - 1);
+        }
+        genre = genre.split(",");
+        console.log("genre: " + genre);
+        largeimg = $("img.ppv-key-visual-of-item-detail").first().attr("src");
+        smallimg = largeimg;
         release = "";
+        label = "";
+        threesize = "";
+        director = "";
+        service = "";
+        hinban = url.substr(url.indexOf("ID=") + 3).toUpperCase();
+        prefix = hinban.replace(/[0-9]/g, "");
+        number = parseInt(hinban.replace(/[^0-9]/g, ""));
+        anothername = "";
+        cast.push(castlist);
+        is_omnibus = false;
+        is_iv = false;
+        is_vr = false;
+        is_limited = false;
+        is_dod = false;
+        is_adultsite = true;
+        is_exdvd = false;
+        is_exbroadcast = false;
+        is_title_fixed = false;
+        send_detail_message(false, "", "");
+      }
+      // 色眼鏡の場合
+      else if(url.indexOf(baseurl_iromegane) != -1)
+      {
+        // 色眼鏡の個別ページ
+        var castlist = "";
+        $("p").each( function() {
+          var text = $(this).text();
+          if(text.indexOf("配信日") != -1 && text.indexOf("タイトル") != -1 && text.indexOf("●") != -1 && text.indexOf("女優") != -1 && text.indexOf("品番") != -1 && text.indexOf("総分数") != -1 && text.indexOf("監督") != -1)
+          {
+            release = text.substr(text.indexOf("配信日") + 3);
+            release = release.substr(0, release.indexOf("タイトル"));
+            release = release.replace(/[^0-9\/]/g, "");
+            broadcast_release = release;
+            console.log("release: " + release);
+                    
+            title = text.substr(text.indexOf("●") + 1);
+            title = title.substr(0, title.indexOf("女優"));
+            console.log("title: " + title);
+            
+            castlist = text.substr(text.indexOf("女優") + 3);
+            castlist = castlist.substr(0, castlist.indexOf("品番"));
+            console.log("castlist: " + castlist);
+            
+            hinban = text.substr(text.indexOf("品番") + 3);
+            hinban = hinban.substr(0, hinban.indexOf("総分数"));
+            hinban = hinban.replace(/\u0020/g, "");
+            hinban = hinban.replace(/\u000a/g, "");
+            hinban = hinban.replace(/\u0009/g, "");
+            prefix = hinban.replace(/[0-9]/g, "");
+            number = parseInt(hinban.replace(/[^0-9]/g, ""));
+            
+            console.log("hinban: " + hinban);
+            
+            $("img").each( function() {
+              var src = $(this).attr("src");
+              console.log("src: " + src);
+              console.log(hinban + "_01.jpg: " + src.indexOf(hinban + "_01.jpg"));
+              if(src.indexOf(hinban + "_01.jpg") != -1 || src.indexOf(hinban + "_h1") != -1)
+              {
+                 largeimg = "http://iromegane.jp" + src;
+                 smallimg = "&ref(" + largeimg + ", 147)";
+                 console.log("largeimg: " + largeimg);
+              }
+            });
+            var dlist = text.substr(text.indexOf("総分数") + 4);
+            dlist = dlist.substr(0, dlist.indexOf("監督"));
+            dlist = dlist.replace("時間", ":");
+            dlist = dlist.replace("分", ":");
+            dlist = dlist.replace("秒", "");
+            dlist = dlist.split(":");
+            if(dlist.length == 3)
+            {
+              duration = parseInt(dlist[0]) * 60 + parseInt(dlist[1]);
+              if(parseInt(dlist[2]) >= 30)
+              {
+                duration += 1;
+              }
+            }
+            else if(dlist.length == 2)
+            {
+              duration = parseInt(dlist[0]);
+              if(parseInt(dlist[1]) >= 30)
+              {
+                duration += 1;
+              }
+            }
+            console.log("duration: " + duration);
+            
+            director = text.substr(text.indexOf("監督") + 3);
+            console.log("director: " + director);
+            label = "色眼鏡";
+            maker = label;
+            series = "";
+          }
+          // FairyDollRebirth
+          else if(text.indexOf("総分数") != -1 && text.indexOf("[ﾌｧｲﾙｻｲｽﾞ") != -1 &&text.indexOf("監督") != -1)
+          {
+            $(":header").each(function() {
+              var tt = $(this).text();
+              if(tt.indexOf("●") != -1)
+              {
+                title = tt.substr(tt.indexOf("●") + 1);
+                if(title.indexOf("／") != -1)
+                {
+                  castlist = title.substr(title.indexOf("／") + 1);
+                  cast = castlist.split(",");
+                  console.log("cast: " + cast);
+                  title = title.substr(0, title.indexOf("／"));
+                }
+                console.log("title: " + title);
+                return false;
+              }
+            });
+            hinban = url.substr(url.lastIndexOf("/") + 1);
+            hinban = hinban.replace(/\u0020/g, "");
+            hinban = hinban.replace(/\u000a/g, "");
+            hinban = hinban.replace(/\u0009/g, "");
+            prefix = hinban.replace(/[0-9]/g, "");
+            number = parseInt(hinban.replace(/[^0-9]/g, ""));
+            console.log("hinban: " + hinban);
+            $("img").each( function() {
+              var src = $(this).attr("src");
+              console.log("src: " + src);
+              console.log("index " + src.indexOf(hinban + "_01.jpg"));
+              if(src.indexOf(hinban + "_01.jpg") != -1 || src.indexOf(hinban + "_h1") != -1)
+              {
+                 largeimg = "http://iromegane.jp" + src;
+                 smallimg = "&ref(" + largeimg + ", 147)";
+                 console.log("largeimg: " + largeimg);
+              }
+            });
+            var dlist = text.substr(text.indexOf("総分数") + 4);
+            dlist = dlist.substr(0, dlist.indexOf("[ﾌｧｲﾙｻｲｽﾞ"));
+            dlist = dlist.replace("時間", ":");
+            dlist = dlist.replace("分", ":");
+            dlist = dlist.replace("秒", "");
+            dlist = dlist.split(":");
+            if(dlist.length == 3)
+            {
+              duration = parseInt(dlist[0]) * 60 + parseInt(dlist[1]);
+              if(parseInt(dlist[2]) >= 30)
+              {
+                duration += 1;
+              }
+            }
+            else if(dlist.length == 2)
+            {
+              duration = parseInt(dlist[0]);
+              if(parseInt(dlist[1]) >= 30)
+              {
+                duration += 1;
+              }
+            }
+            console.log("duration: " + duration);
+            director = text.substr(text.indexOf("監督") + 3);
+            console.log("director: " + director);
+            release = "";
+            broadcast_release = release;
+            label = "FairyDollRebirth";
+            maker = label;
+            series = "";
+          }
+        });
+        genre = [];
+        console.log("genre: " + genre);
+        threesize = "";
+        service = "";
+        anothername = castlist;
+        is_omnibus = false;
+        is_iv = false;
+        is_vr = false;
+        is_limited = false;
+        is_dod = false;
+        is_adultsite = true;
+        is_exdvd = false;
+        is_exbroadcast = false;
+        is_title_fixed = false;
+        send_detail_message(false, "", "");
+      }
+      // S-Cuteの場合
+      else if(url.indexOf(baseurl_scute) != -1)
+      {
+        title = $("h3.h1").text();
+        if(title.indexOf("／") != -1)
+        {
+          anothername = title.substr(title.indexOf("／") + 1);
+          title = title.substr(0, title.indexOf("／"));
+          console.log("title: " + title);
+          console.log("anothername: " + anothername);
+
+        }
+        hinban = url.substr(url.indexOf("contents/") + 9);
+        hinban = hinban.replace(/\//g, "");
+        number = parseInt(hinban.replace(/[^0-9]/g, ""));
+        prefix = hinban.replace(/[0-9]/g, "");
+        release = $("div.single-meta span.date").text();
+        release = release.replace(/[^0-9\/]/g, "");
+        broadcast_release = release;
+        console.log("release: " + release);
+        var dlist = $("div.single-meta span.comment").text();
+        if(dlist.indexOf("動画") != -1 && dlist.indexOf("分") != -1)
+        {
+          dlist = dlist.substr(dlist.indexOf("動画") + 2);
+          dlist = dlist.substr(0, dlist.indexOf("分"));
+          duration = parseInt(dlist.replace(/[^0-9]/g, ""));
+          console.log("duration: " + duration);
+        }
+        $("div.tags").find("a").each(function() {
+          genre.push($(this).text());
+        });
+        console.log("genre: " + genre);
+        $("div.about-author p").each(function() {
+          var text = $(this).text();
+          if(text.indexOf(")-W") != -1)
+          {
+            text = text.split("／");
+            if(text.length == 3)
+            {
+              anothername += " " + text[0] + " " + text[2] + " " + text[1];
+              threesize = text[2] + " " + text[1];
+              console.log("anothername: " + anothername);
+            }
+          }
+        });
+        var suburl = $("div.about-author a").first().attr("href");
+        if(suburl.indexOf(scuteurl_actress) != -1)
+        {
+          suburl = "https://www.s-cute.com" + suburl;
+        }
+        largeimg = $("div.content-cover img").first().attr("src");
+        smallimg = "&ref(" + largeimg.replace(".jpg", "_800.jpg") + ", 226)";
+        maker = "S-Cute";
+        label = "";
+        director = "";
+        service = "";
+        cast = [];
+        is_omnibus = false;
+        is_iv = false;
+        is_vr = false;
+        is_limited = false;
+        is_dod = false;
+        is_adultsite = true;
+        is_exdvd = false;
+        is_exbroadcast = false;
+        is_title_fixed = false;
+        send_detail_message(is_search_wiki, baseurl_scute, suburl);
+      }
+      // AVEの場合
+      else if(url.indexOf(baseurl_aventertainments) != -1)
+      {
+        title = $("meta[property='og:title']").attr('content');
+        largeimg = $("meta[property='og:image']").attr('content');
+        smallimg = "&ref(" + largeimg + ", 147)";
+        largeimg = largeimg.replace("jacket_images", "bigcover");
+        var castlist = "";
+        $("span.redtitle").each( function() {
+          var text = $(this).text();
+          if(text.indexOf("主演女優") != -1)
+          {
+            castlist = $(this).parent().text();
+            castlist = castlist.replace("主演女優:", "");
+            castlist = castlist.replace(/\u0020/g, "");
+            cast = castlist.split(",");
+//            console.log("uni:" + cast.codePointAt(0).toString(16));
+            console.log("cast: " + cast);
+          }
+          else if(text.indexOf("スタジオ") != -1)
+          {
+            label = $(this).next().text();
+            maker = label;
+            console.log("label: " + label);
+          }
+          else if(text.indexOf("シリーズ") != -1)
+          {
+            series = $(this).next().text();
+            console.log("series: " + series);
+          }
+          else if(text.indexOf("カテゴリ一覧") != -1)
+          {
+            // 全て見るがあるとき
+            if($(this).parent().children("span.viewall").length > 0)
+            {
+              genre = $("a[name=AllCategory]").next().next().next().find("ul").text();
+              genre = genre.replace(/\u000a/g, ",");
+              genre = genre.replace(/\u0020/g, "");
+              genre = genre.replace(/,+/g, ",");
+              if (genre.indexOf(",") == 0) {
+                genre = genre.substr(1);
+              }
+              if (genre.lastIndexOf(",") == genre.length - 1) {
+                genre = genre.substr(0, genre.length - 1);
+              }
+              genre = genre.split(",");
+//              console.log("uni:" + genre.codePointAt(0).toString(16));
+              console.log("genre: " + genre);
+            }
+            else
+            {
+              genre = $(this).parent().text();
+              genre = genre.replace("カテゴリ一覧:", "");
+              genre = genre.replace(/\u000a/g, ",");
+              genre = genre.replace(/\u0020/g, "");
+              genre = genre.replace(/,+/g, ",");
+              if (genre.indexOf(",") == 0) {
+                genre = genre.substr(1);
+              }
+              if (genre.lastIndexOf(",") == genre.length - 1) {
+                genre = genre.substr(0, genre.length - 1);
+              }
+              genre = genre.split(",");
+              console.log("genre: " + genre);
+            }
+          }
+          else if(text.indexOf("発売日") != -1)
+          {
+            release = $(this).parent().text();
+            release = release.replace(/[^0-9\/]/g, "");
+            var releaselist = release.split("/");
+            if(releaselist.length == 3)
+            {
+              release = releaselist[2] + "/" + releaselist[0] + "/" + releaselist[1];
+            }
+            broadcast_release = release;
+            console.log("release: " + release);
+          }
+          else if(text.indexOf("収録時間") != -1)
+          {
+            var dlist = $(this).parent().text();
+            dlist = dlist.replace(/[^0-9]/g, "");
+            duration = parseInt(dlist);
+            console.log("duration: " + duration);
+          }
+        });
+        threesize = "";
+        director = "";
+        service = "";
+        hinban = $("div.top-title").text();
+        hinban = hinban.replace("商品番号: ", "");
+        prefix = hinban.substr(0, hinban.indexOf("-"));
+        number = parseInt(hinban.replace(/[^0-9]/g, ""));
+        anothername = "";
+        is_omnibus = false;
+        is_iv = false;
+        is_vr = false;
+        is_limited = false;
+        is_dod = false;
+        is_adultsite = false;
+        is_exdvd = false;
+        is_exbroadcast = false;
+        is_exdvd = true;
+        is_title_fixed = false;
+        send_detail_message(false, "", "");
       }
       // カリビアンコムの場合
       else if(url.indexOf(baseurl_carib) != -1)
@@ -1269,6 +2575,7 @@
         });
         console.log("title: " + title);
         is_adultsite = false;
+        is_exdvd = false;
         is_exbroadcast = true;
         is_omnibus = false;
         is_iv = false;
@@ -1279,18 +2586,22 @@
         }
         
         largeimg = url.replace("index.html", "l_l.jpg");
-        smallimg = "&ref(" + largeimg + ",200)";
-        
+        smallimg = "&ref(" + largeimg + ", 226)";
+        var castlist = "";
         $("li.movie-spec").each( function() {
           var text = $(this).children("span.spec-title").text();
           if(text.indexOf("出演") != -1)
           {
-            cast = $(this).children("span.spec-content").text();
-            cast = cast.replace(/\u0009/g, "");
-            cast = cast.replace(/\u000a/g, "]]／[[");
-            cast = "[[" + cast + "]]";
-            cast = cast.replace("[[]]／[[", "[[");
-            cast = cast.replace("]]／[[]]", "]]");
+            castlist = $(this).children("span.spec-content").text();
+            castlist = castlist.replace(/\u0009/g, "");
+            castlist = castlist.replace(/\u000a/g, ",");
+            if (castlist.indexOf(",") == 0) {
+              castlist = castlist.substr(1);
+            }
+            if (castlist.lastIndexOf(",") == castlist.length - 1) {
+              castlist = castlist.substr(0, castlist.length - 1);
+            }
+            cast = castlist.split(",");
             console.log("cast: " + cast);
           }
           else if(text.indexOf("配信日") != -1)
@@ -1353,8 +2664,8 @@
           }
         });
         var suburl = "";
-        label = "カリビアンコム";
         maker = "カリビアンコム";
+        label = "";
         threesize = "";
         director = "";
         service = "";
@@ -1366,7 +2677,7 @@
         is_dod = false;
         is_title_fixed = false;
         // カリビアンコムの場合はwikiを探さない
-        send_detail_message(false, "");
+        send_detail_message(false, "", "");
       }
       // 一本道の場合
       else if(url.indexOf(baseurl_pondotv) != -1)
@@ -1381,16 +2692,16 @@
             console.log(msg);
             title = msg.Title;
             console.log("title: " + title);
-            cast = "[[";
+            var castlist = "";
             for(var i = 0; i < msg.ActressesJa.length; i++)
             {
               if(i != 0)
               {
-                cast += "]]／[[";
+                castlist += ",";
               }
-              cast += msg.ActressesJa[i];
+              castlist += msg.ActressesJa[i];
             }
-            cast += "]]";
+            cast = castlist.split(",");
             console.log("cast: " + cast);
             
             duration = Math.round(msg.Duration / 60);
@@ -1404,7 +2715,7 @@
             series = msg.Series;
             console.log("series: " + series);
             maker = "一本道";
-            label = maker;
+            label = "";
             genre = msg.UCNAME;
             threesize = "";
             director = "";
@@ -1419,11 +2730,226 @@
             is_limited = false;
             is_dod = false;
             is_adultsite = false;
+            is_exdvd = false;
             is_exbroadcast = true;
             is_title_fixed = false;
-            send_detail_message(false, "");
+            send_detail_message(false, "", "");
           }
         });
+      }
+      // HEYZOの場合
+      else if(url.indexOf(baseurl_heyzo) != -1)
+      {
+        var movie_id = url.replace(/[^0-9]/g, "");
+        title = $("div#movie").find("h1").first().text();
+        title = title.replace(/\u000a/g, "");
+        title = title.replace(/\u0020/g, "");
+        title = title.replace(/\u0009/g, "");
+        title = title.replace(/-/g, " - ");
+        console.log("uni:" + title.codePointAt(0).toString(16));
+        console.log("title: " + title);
+        $("table.movieInfo").first().find("td").each( function() {
+          var text = $(this).text();
+          if(text.indexOf("公開日") != -1)
+          {
+            var release = $(this).next().text();
+            release = release.replace(/-/g, "/");
+            release = release.replace(/\u000a/g, "");
+            release = release.replace(/\u0020/g, "");
+            release = release.replace(/\u0009/g, "");
+            broadcast_release = release;
+//            console.log("uni:" + release.codePointAt(0).toString(16));
+            console.log("release: " + release);
+          }
+          else if(text.indexOf("出演") != -1)
+          {
+            var castlist = $(this).next().text();
+            castlist = castlist.replace(/\u000a/g, "");
+            castlist = castlist.replace(/\u0020/g, "");
+            castlist = castlist.replace(/\u0009/g, "");
+            castlist = castlist.replace(/\u00a0/g, ",");
+            if (castlist.indexOf(",") == 0) {
+              castlist = castlist.substr(1);
+            }
+            if (castlist.lastIndexOf(",") == castlist.length - 1) {
+              castlist = castlist.substr(0, castlist.length - 1);
+            }
+            cast = castlist.split(",");
+            console.log("cast: " + cast);
+          }
+          else if(text.indexOf("タグキーワード") != -1)
+          {
+            var genreelem = $(this).next();
+            if(genreelem.length > 0)
+            {
+              genre = genreelem.text();
+              genre = genre.replace(/\u000a/g, ",");
+              genre = genre.replace(/\u0020/g, "");
+              genre = genre.replace(/\u0009/g, "");
+              genre = genre.replace(/,+/g, ",");
+              if (genre.indexOf(",") == 0) {
+                genre = genre.substr(1);
+              }
+              if (genre.lastIndexOf(",") == genre.length - 1) {
+                genre = genre.substr(0, genre.length - 1);
+              }
+              genre = genre.split(",");
+              console.log("genre: " + genre);
+            }
+          }
+        });
+        maker = "HEYZO";
+        label = "";
+        series = "";
+        threesize = "";
+        director = "";
+        service = "";
+        hinban = "HEYZO-" + movie_id;
+        prefix = "HEYZO";
+        number = parseInt(movie_id);
+        anothername = "";
+        is_omnibus = false;
+        is_iv = false;
+        is_vr = false;
+        is_limited = false;
+        is_dod = false;
+        is_adultsite = false;
+        is_exdvd = false;
+        is_exbroadcast = true;
+        is_title_fixed = false;
+        send_detail_message(false, "", "");
+      }
+      // 東京熱の場合
+      else if(url.indexOf(baseurl_tokyohot) != -1)
+      {
+        title = $("div.contents").first().children("h2").first().text();
+        genre = [];
+        $("dl.info").find("dt").each( function() {
+          var text = $(this).text();
+          if(text.indexOf("出演者") != -1)
+          {
+            var castlist = "";
+            $(this).next().find("a").each( function() {
+              castlist += $(this).text() + ",";
+            });
+            if (castlist.lastIndexOf(",") == castlist.length - 1) {
+              castlist = castlist.substr(0, castlist.length - 1);
+            }
+            cast = castlist.split(",");
+            console.log("cast: " + cast);
+          }
+          else if(text.indexOf("プレイ内容") != -1)
+          {
+            var genrelist = "";
+            $(this).next().find("a").each( function() {
+              var gl = $(this).text();
+              var added = false;
+              for(var i = 0; i < genre.length; i++)
+              {
+                if(genre[i].match(gl))
+                {
+                  added = true;
+                  break;
+                }
+              }
+              if(!added)
+              {
+                genrelist += gl + ",";
+              }
+            });
+            if (genrelist.lastIndexOf(",") == genrelist.length - 1) {
+              genrelist = genrelist.substr(0, genrelist.length - 1);
+            }
+            genre = genre.concat(genrelist.split(","));
+          }
+          else if(text.indexOf("タグ") != -1)
+          {
+            var genrelist = "";
+            $(this).next().find("a").each( function() {
+              var gl = $(this).text();
+              var added = false;
+              for(var i = 0; i < genre.length; i++)
+              {
+                if(genre[i].match(gl))
+                {
+                  added = true;
+                  break;
+                }
+              }
+              if(!added)
+              {
+                genrelist += gl + ",";
+              }
+            });
+            if (genrelist.lastIndexOf(",") == genrelist.length - 1) {
+              genrelist = genrelist.substr(0, genrelist.length - 1);
+            }
+            genre = genre.concat(genrelist.split(","));
+          }
+          else if(text.indexOf("シリーズ") != -1)
+          {
+            series = "";
+            $(this).next().find("a").each( function() {
+              series += $(this).text() + ",";
+            });
+            if (series.lastIndexOf(",") == series.length - 1) {
+              series = series.substr(0, series.length - 1);
+            }
+            // シリーズが複数ある場合は、最後がシリーズ名
+            if(series.lastIndexOf(",") != -1)
+            {
+              series = series.substr(series.lastIndexOf(",") + 1);
+            }
+            console.log("series: " + series);
+          }
+          else if(text.indexOf("レーベル") != -1)
+          {
+            label = $(this).next().text();
+            maker = label;
+            console.log("label: " + label);
+          }
+          else if(text.indexOf("配信開始日") != -1)
+          {
+            release = $(this).next().text();
+            console.log("release: " + release);
+          }
+          else if(text.indexOf("収録時間") != -1)
+          {
+            var dlist = $(this).next().text();
+            dlist = dlist.split(":");
+            if(dlist.length == 3)
+            {
+              duration = parseInt(dlist[0]) * 60 + parseInt(dlist[1]);
+              if(parseInt(dlist[2]) >= 30)
+              {
+                duration += 1;
+              }
+            }
+            console.log("duration: " + duration);
+          }
+          else if(text.indexOf("作品番号") != -1)
+          {
+            hinban = $(this).next().text();
+            prefix = hinban.replace(/[0-9]\-/g, "");
+            number = parseInt(hinban.replace(/[^0-9]/g, ""));
+            console.log("hinban: " + hinban);
+          }
+        });
+        console.log("genre: " + genre);
+        threesize = "";
+        director = "";
+        service = "";
+        anothername = "";
+        is_omnibus = false;
+        is_iv = false;
+        is_vr = false;
+        is_limited = false;
+        is_dod = false;
+        is_adultsite = false;
+        is_exdvd = false;
+        is_exbroadcast = true;
+        is_title_fixed = false;
+        send_detail_message(false, "", "");
       }
       // Getchuの場合
       else if(url.indexOf(baseurl_getchu) != -1)
@@ -1431,7 +2957,7 @@
         title = $("meta[property='og:title']").attr('content');
         console.log("title: " + title);
         largeimg = $("meta[property='og:image']").attr('content');
-        smallimg = "&ref(" + largeimg.replace("top", "small") + ", 147)";
+        smallimg = "&ref(" + largeimg + ", 226)";
         $("td.bluetext").each( function() {
           var text = $(this).text();
           if(text.indexOf("サークル") != -1)
@@ -1465,9 +2991,10 @@
         is_limited = false;
         is_dod = false;
         is_adultsite = false;
+        is_exdvd = false;
         is_exbroadcast = false;
         is_title_fixed = false;
-        send_detail_message(is_search_wiki, baseurl_getchu);
+        send_detail_message(is_search_wiki, baseurl_getchu, url);
       }
       // Twitterの場合
       else if(url.indexOf(baseurl_twitter) != -1)
@@ -1479,11 +3006,11 @@
           var id = $(this).attr("data-testid");
           if(id == "UserDescription")
           {
-            cast = $(this).text();
-            cast = cast.replace("----\n**Twitter\n", "");
-            cast = cast.replace(/\n/g, "~~\n>");
-            cast = ">" + cast;
-            console.log("description: " + cast);
+            anothername = $(this).text();
+            anothername = anothername.replace("----\n**Twitter\n", "");
+            anothername = anothername.replace(/\n/g, "~~\n>");
+            anothername = ">" + anothername;
+            console.log("description: " + anothername);
             return false;
           }
         });
@@ -1500,23 +3027,23 @@
         });
         maker = "";
         label = "";
-        genre = "";
+        genre = [];
         threesize = "";
         director = "";
         service = "";
         hinban = "";
         prefix = "";
         number = 0;
-        anothername = "";
         is_omnibus = false;
         is_iv = false;
         is_vr = false;
         is_limited = false;
         is_dod = false;
         is_adultsite = false;
+        is_exdvd = false;
         is_exbroadcast = false;
         is_title_fixed = false;
-        send_detail_message(false, "");
+        send_detail_message(false, "", "");
       }
       return true;
     }
@@ -1542,7 +3069,7 @@
       wiki_label = msg.wiki_label;
       wiki_series = msg.wiki_series;
       console.log("wiki label: " + wiki_label);
-      send_detail_message(false, "");
+      send_detail_message(false, "", "");
       return true;
     //================================================================================
     // 次の作品を開く
@@ -1566,7 +3093,11 @@
           return true;
         }
       }
-
+      if(msg.is_replace_http)
+      {
+        msg.largeimg = msg.largeimg.replace("http://", "https://");
+        msg.smallimg = msg.smallimg.replace("http://", "https://");
+      }
       var matometitle = msg.title;
       var matomerelease = msg.release;
       if (msg.release == "") {
@@ -1577,19 +3108,33 @@
         console.log("msg.wiki_label: " + msg.wiki_label);
         console.log("msg.wiki_series: " + msg.wiki_series);
         if (msg.wiki_label.length > 0) {
-          wiki_label = " [[(レーベル一覧)>" + msg.wiki_label + "]]";
+          wiki_label = " [[(レーベル一覧)>" + '<a class="actress_link" href="http://sougouwiki.com/d/' +EscapeEUCJP(msg.wiki_label) + '" target="_blank">' + msg.wiki_label + '</a>' + "]]";
         }
         if (msg.wiki_series.length > 0) {
-          wiki_series = " [[(シリーズ一覧)>" + msg.wiki_series + "]]";
+          wiki_series = " [[(シリーズ一覧)>" + '<a class="actress_link" href="http://sougouwiki.com/d/' +EscapeEUCJP(msg.wiki_series) + '" target="_blank">' + msg.wiki_series + '</a>' + "]]";
         }
         var cast_list = "";
-        if (msg.cast.indexOf("／") != -1) {
-          cast_list = "出演者：" + msg.cast + "\n<br>";
+        // 2人以上のときは出演者を表示
+        if (msg.cast.length >= 2) {
+          cast_list = "出演者：[[";
+          for(var i = 0; i < msg.cast.length; i++)
+          {
+            if(i != 0)
+            {
+              cast_list += "]]／[[";
+            }
+            cast_list += '<a class="actress_link" href="http://sougouwiki.com/d/' +EscapeEUCJP(msg.cast[i]) + '" target="_blank">' + msg.cast[i] + '</a>';
+          }
+          cast_list += "]]\n<br>";
         }
         matomerelease = matomerelease.replace(/\u002f/g, '.');
         
         var matomelabel = "";
-        var matomehinban = " " + msg.hinban;
+        var matomehinban = "";
+        if(msg.hinban.length > 0)
+        {
+          matomehinban = " " + msg.hinban;
+        }
         var matomelimited = "";
         // レーベル名の方がメーカー名より短く、かつメーカー名が「レーベル名/メーカー名」になっている場合は、レーベル名とメーカー名を同一にする
         if(msg.label.length < msg.maker.length)
@@ -1648,35 +3193,74 @@
           // タイトルに「MGS タイトル 名義」を表記
           matometitle = "MGS " + matometitle + anothername;
         }
-        // Perfect-Gの場合
-        else if(msg.url.indexOf(baseurl_perfectg) != -1)
+        // U-NEXT/FALENOの場合
+        else if(msg.url.indexOf(baseurl_unext) != -1 || msg.url.indexOf(baseurl_faleno) != -1)
         {
-          matometitle = "G-AREA Perfect-G " + anothername;
+          matometitle = "";
+          if(msg.maker.length > 0)
+          {
+            matometitle = msg.maker + " ";
+          }
+          matometitle += msg.title;
+          matomelabel = "";
+          if(msg.label.length > 0)
+          {
+            matomelabel = msg.label;
+          }
+        }
+        // Perfect-G/舞ワイフ/RealFile/HimeMix/GIRL'S BLUE/Happy Fish/Tokyo247/S-Cuteの場合
+        else if(msg.url.indexOf(baseurl_perfectg) != -1 || msg.url.indexOf(baseurl_mywife) != -1 || msg.url.indexOf(baseurl_realfile) != -1 || msg.url.indexOf(baseurl_himemix) != -1 || msg.url.indexOf(baseurl_girlsblue) != -1 || msg.url.indexOf(baseurl_happyfish) != -1 || msg.url.indexOf(baseurl_tokyo247) != -1 || msg.url.indexOf(baseurl_scute) != -1)
+        {
+          matometitle = "";
+          if(msg.maker.length > 0)
+          {
+            matometitle = msg.maker + " ";
+          }
+          if(msg.label.length > 0)
+          {
+            matometitle += msg.label + " ";
+          }
+          if(msg.url.indexOf(baseurl_scute) != -1)
+          {
+            matometitle += msg.title + " " + anothername;
+          }
+          else
+          {
+            matometitle += "No." + number + " " + anothername;
+          }
           matomelabel = "";
           matomehinban = "";
-          cast_list = "<font color='red'>女優名：" + cast + "</font>";
         }
-        // 舞ワイフの場合
-        else if(msg.url.indexOf(baseurl_mywife) != -1)
+        // FC2/デジグラ/LOVEPOP/色眼鏡/カリビアンコム/一本道/HEYZO/東京熱の場合
+        else if(msg.url.indexOf(baseurl_fc2) != -1 || msg.url.indexOf(baseurl_digigra) != -1 || msg.url.indexOf(baseurl_lovepop) != -1 || msg.url.indexOf(baseurl_iromegane) != -1 || msg.url.indexOf(baseurl_carib) != -1 || msg.url.indexOf(baseurl_pondotv) != -1 || msg.url.indexOf(baseurl_heyzo) != -1 || msg.url.indexOf(baseurl_tokyohot) != -1)
         {
-          matometitle = "舞ワイフ No." + number + " " + anothername;
+          matometitle = "";
+          if(msg.maker.length > 0)
+          {
+            matometitle = msg.maker + " ";
+          }
+          if(msg.label.length > 0 && !msg.label.match(msg.maker))
+          {
+            matometitle += msg.label + " ";
+          }
+          matometitle += msg.title;
           matomelabel = "";
-          matomehinban = "";
-          cast_list = "<font color='red'>女優名：" + cast + "</font>";
         }
-        // RealFileの場合
-        else if(msg.url.indexOf(baseurl_realfile) != -1)
+        
+        // デジグラ/LOVEPOPの場合
+        if(msg.url.indexOf(baseurl_digigra) != -1 || msg.url.indexOf(baseurl_lovepop) != -1)
         {
-          matometitle = "Real File No." + number + " " + anothername;
-          matomelabel = "";
-          matomehinban = "";
-          cast_list = "<font color='red'>女優名：" + cast + "</font>";
+            // sougouwikiから画像を引っ張ってこれた場合はOK
+            if(msg.largeimg.indexOf(baseurl_seesaa) == -1)
+            {
+              var dlimg = 'サムネイル画像リンク：<a href="' + msg.largeimg + '" target="_blank" download="' + msg.largeimg.substr(msg.largeimg.lastIndexOf("/") + 1) + '">' + msg.largeimg + '</a>\n<br>';
+              dlimg += '<div class="upload_link_' + msg.hinban + '"><form class="upload_to_sougouwiki" method="post"><input class="actress_name_for_sougouwiki" type="text" name="name" placeholder="女優名" value="' + msg.cast +'"><br></form><button class="button_for_sougouwiki" data-image="' + msg.largeimg + '">アップロード先リンクを取得</button></div>';
+              $("body").find("div#adultsite_works").append(dlimg);
+              msg.largeimg = "<font color='red'>サムネイル画像ファイルをsougouwiki.comにアップロードする必要があります</font>";
+              msg.smallimg = "&ref(" + msg.largeimg + ", 226)";
+            }
         }
-        // FC2の場合
-        else if(msg.url.indexOf(baseurl_fc2) != -1)
-        {
-          matometitle = "FC2 " + msg.title;
-        }
+               
         if(matomelabel.length > 0)
         {
           matomelabel = "（" + matomelabel + "）";
@@ -1687,8 +3271,12 @@
         if (msg.is_adultsite) {
           $("body").find("div#adultsite_works").attr("style", "visibility:visible");
           $("body").find("div#adultsite_works").append(joyumatome);
+        } else if(msg.is_exdvd) {
+            joyumatome = "//" + matomerelease + matomehinban + "\n<br>" + "-[[" + matometitle + matomelabel + ">" + msg.url + "]]" + "\n<br>" + cast_list + "\n<br>";
+            $("body").find("div#exdvd_works").attr("style", "visibility:visible");
+            $("body").find("div#exdvd_works").append(joyumatome);
         } else if (msg.is_exbroadcast) {
-          joyumatome = "//" + matomerelease + "\n<br>" + "[[" + matometitle + matomelabel + ">" + msg.url + "]]" + "\n<br>" + cast_list;
+          joyumatome = "//" + matomerelease + matomehinban + "\n<br>" + "-[[" + matometitle + matomelabel + ">" + msg.url + "]]" + "\n<br>" + cast_list + "\n<br>";
           $("body").find("div#exbroadcast_works").attr("style", "visibility:visible");
           $("body").find("div#exbroadcast_works").append(joyumatome);
         } else if (msg.is_omnibus) {
@@ -1714,12 +3302,38 @@
         } else {
           $("body").find("div#basic_works").append(joyumatome);
         }
+        if(msg.is_title_fixed)
+        {
+          var alert = $("div#title_fix_alert");
+          if(alert.length == 0)
+          {
+            var adddiv = "<div id='title_fix_alert'><font color='red'>※ 赤字のタイトルは伏字を予測解除しています。コピペする際は注意してください。</font></div>";
+            if(div_to_add != null)
+            {
+              div_to_add.prepend(adddiv);
+            }
+          }
+        }
+        // 女優が一人の場合で、個別ページのとき
+        if(msg.cast.length == 1 && is_detail_page)
+        {
+          if(!msg.cast[0].match("----"))
+          {
+            var actress_link = '<div class="actress_link" align="left"><font color="red"><a class="actress_link" href="http://sougouwiki.com/d/' +EscapeEUCJP(msg.cast[0]) + '" target="_blank">' + msg.cast[0] + '</a></font></div>';
+            
+            if(div_to_add != null)
+            {
+              div_to_add.prepend(actress_link);
+            }
+          }
+        }
       }
       // レーベルまとめページ用出力
-      else {
-        var matomecast = msg.cast;
+      else
+      {
+        var matomecast = "";
         // 出演者情報なしの場合
-        if (matomecast == "") {
+        if (msg.cast.length == 0) {
           // 別名があるとき
           if (msg.anothername.length > 0) {
             matomecast = msg.anothername.replace(/\(/g, '');
@@ -1729,8 +3343,21 @@
           }
         }
         // 誰も情報がない場合
-        else if (matomecast == "[[----]]") {
+        else if (msg.cast[0].match("----")) {
           matomecast = "[[ ]]";
+        }
+        else
+        {
+          matomecast = "[[";
+          for(var i = 0; i < msg.cast.length; i++)
+          {
+            if(i != 0)
+            {
+              matomecast += "]]／[[";
+            }
+            matomecast += '<a class="actress_link" href="http://sougouwiki.com/d/' +EscapeEUCJP(msg.cast[i]) + '" target="_blank">' + msg.cast[i] + '</a>';
+          }
+          matomecast += "]]";
         }
         matomerelease = matomerelease.replace(/\u002f/g, '-');
         if (url.indexOf(baseurl_dmm) != -1 && msg.is_adultsite) {
@@ -1790,22 +3417,22 @@
         var alert = $("div#title_fix_alert");
         if(alert.length == 0)
         {
-          console.log("add alert");
           var adddiv = "<div id='title_fix_alert'><font color='red'>※ 赤字のタイトルは伏字を予測解除しています。コピペする際は注意してください。</font></div>";
-          if(url.indexOf(baseurl_dmm) != -1)
+          if(div_to_add != null)
           {
-            $("body").find("td#mu").prepend(adddiv);
-            console.log("add alert");
-          }
-          else if(url.indexOf(baseurl_mgs) != -1)
-          {
-            $("body").find("ul.Bread_crumb").prepend(adddiv);
-            console.log("add alert");
+            div_to_add.prepend(adddiv);
           }
         }
       }
       console.log("result: " + msg.hinban);
       return true;
+    }
+    //================================================================================
+    // 結果表示
+    else if (msg.type == "uploadlink") {
+      $("div." + msg.classname).first().empty();
+      var uploadlink = 'アップロード先リンク：<a class="' + msg.classname + '" href="' + msg.uploadlink + '" target="_blank">' + msg.uploadlink + '</a>';
+      $("div." + msg.classname).first().append(uploadlink);
     }
     return true;
   });
@@ -1820,7 +3447,9 @@
         link: link_list[0],
         output: output,
         is_search_wiki: is_search_wiki,
-        is_search_release_with_wiki: is_search_release_with_wiki
+        is_search_release_with_wiki: is_search_release_with_wiki,
+        is_replace_http: is_replace_http,
+        is_add_www: is_add_www
       });
       link_list.splice(0, 1);
     }
@@ -1832,7 +3461,10 @@
     copy_list = [];
     url = "";
     output = "";
+    div_to_add = null;
     self = false;
+    is_replace_http = false;
+    is_add_www = false;
     is_renban = false;
     is_director = false;
     is_ignore_limited = false;
@@ -1840,6 +3472,7 @@
     is_search_wiki = false;
     is_search_release_with_wiki = false;
     is_first_product = false;
+    is_detail_page = false;
     title = "";
     service = "";
     duration = "";
@@ -1865,6 +3498,7 @@
     is_iv = false;
     is_vr = false;
     is_adultsite = false;
+    is_exdvd = false;
     is_exbroadcast = false;
     is_limited = false;
     is_dod = false;
@@ -1882,14 +3516,16 @@
       link: url,
       output: output,
       is_search_wiki: is_search_wiki,
-      is_search_release_with_wiki: is_search_release_with_wiki
+      is_search_release_with_wiki: is_search_release_with_wiki,
+      is_replace_http: is_replace_http,
+      is_add_www: is_add_www
     });
   };
  
   //================================================================================
-  send_detail_message = function(send_wiki, searchurl) {
+  send_detail_message = function(send_wiki, searchurl, suburl) {
     // レーベル名の方がメーカー名より長く、かつレーベル名にメーカー名が含まれる場合は、レーベル名の中からメーカー名を削除
-    if(label.length > maker.length)
+    if(maker.length > 0 && label.length > maker.length)
     {
       if(label.indexOf(maker) != -1)
       {
@@ -1914,7 +3550,6 @@
     }
     console.log("is_search_wiki:" + send_wiki);
     if (send_wiki && output == "actress") {
-      var suburl = url;
       var pos = suburl.indexOf(searchurl);
       if (pos != -1) {
         suburl = suburl.substr(pos);
@@ -1923,14 +3558,16 @@
       chrome.runtime.sendMessage({
         type: "open_next_wiki",
         url: url,
-        link: suburl,
+        suburl: suburl,
         label: label,
         maker: maker,
         series: series,
         prefix: prefix,
         output: output,
         is_search_wiki: is_search_wiki,
-        is_search_release_with_wiki: is_search_release_with_wiki
+        is_search_release_with_wiki: is_search_release_with_wiki,
+        is_replace_http: is_replace_http,
+        is_add_www: is_add_www
       }, function (response) {
         if (response.close && !self) {
           window.close();
@@ -1966,13 +3603,16 @@
         is_iv: is_iv,
         is_vr: is_vr,
         is_adultsite: is_adultsite,
+        is_exdvd: is_exdvd,
         is_exbroadcast: is_exbroadcast,
         is_limited: is_limited,
         is_dod: is_dod,
         output: output,
         is_search_wiki: is_search_wiki,
         is_search_release_with_wiki: is_search_release_with_wiki,
-        is_title_fixed: is_title_fixed
+        is_title_fixed: is_title_fixed,
+        is_replace_http: is_replace_http,
+        is_add_www: is_add_www
       }, function (response) {
         if (!self) {
           window.close();
@@ -1981,4 +3621,21 @@
       });
     }
   };
+  
+  //================================================================================
+  $("body").on("click", function(e) {
+    var text = $(e.target).text();
+    if(text.indexOf("アップロード先リンクを取得") != -1)
+    {
+      var actress_name_for_sougouwiki = $(e.target).parent().find("input.actress_name_for_sougouwiki").val();
+      var encoded = EscapeEUCJP(actress_name_for_sougouwiki);
+      var classname = $(e.target).parent().attr("class");
+      chrome.runtime.sendMessage({
+        type: "upload_to_sougouwiki",
+        cast: actress_name_for_sougouwiki,
+        castencoded: encoded,
+        classname: classname
+      });
+    }
+  });
 }).call(this);
