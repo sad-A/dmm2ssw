@@ -1552,7 +1552,6 @@
           var text = $(this).text();
           if(text.indexOf("女優") != -1)
           {
-            cast = [];
             $(this).parent().find("dd").each( function() {
               cast.push($(this).text());
             });
@@ -3482,7 +3481,7 @@
     label = "";
     maker = "";
     series = "";
-    cast = "";
+    cast = [];
     anothername = "";
     threesize = "";
     genre = [];
