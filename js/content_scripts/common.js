@@ -19,6 +19,8 @@
   var is_search_release_with_wiki = false;
   var is_first_product = false;
   var is_detail_page = false;
+  var last_labelmatome = "";
+  var dmm_label_name = "";
   var title = "";
   var service = "";
   var duration = "";
@@ -426,7 +428,22 @@
           });
         }
       }
+      var pagetop = '<div id="dmm2ssw_pagetop"></div>';
+      $("body").find("div#dmm2ssw").append(pagetop);
       if (output == "label") {
+        // DVDのレーベルページのとき
+        if(url.indexOf(url_dvd) != -1 && url.indexOf(url_label) != -1)
+        {
+          var labeltitle = $("p.headwithelem").find("span[itemprop=name]").last().text();
+          console.log("labeltitle: " + labeltitle);
+          dmm_label_name = labeltitle;
+          var labelurl = url;
+          var labelurllatter = labelurl.substr(labelurl.indexOf("id="));
+          labelurllatter = labelurllatter.substr(0, labelurllatter.indexOf("/")) + "/sort=date/";
+          labelurl = labelurl.substr(0, labelurl.indexOf("id=")) + labelurllatter;
+          labeltitle = "<div id='dmm2ssw_pagetitle'>*[[" + '<a class="label_link" href="http://sougouwiki.com/d/' +EscapeEUCJP(dmm_label_name) + '" target="_blank">' + labeltitle + '</a>' + ">" + labelurl + "]]<br><br></div>";
+          $("div#dmm2ssw_pagetop").append(labeltitle);
+        }
         var labelmatome = "{| class=\"edit\"\n<br>|~NO|PHOTO|TITLE|ACTRESS|DIRECTOR|RELEASE|NOTE|\n<br>";
         if (!is_director) {
           labelmatome = "{| class=\"edit\"\n<br>|~NO|PHOTO|TITLE|ACTRESS|RELEASE|NOTE|\n<br>";
@@ -461,8 +478,8 @@
             var joyuurllatter = joyuurl.substr(joyuurl.indexOf("id="));
             joyuurllatter = joyuurllatter.substr(0, joyuurllatter.indexOf("/")) + "/sort=date/";
             joyuurl = joyuurl.substr(0, joyuurl.indexOf("id=")) + joyuurllatter;
-            joyutitle = "*[[" + '<a class="actress_link" href="http://sougouwiki.com/d/' +EscapeEUCJP(joyuname) + '" target="_blank">' + joyutitle + '</a>' + ">" + joyuurl + "]]";
-            $("body").find("div#dmm2ssw").append(joyutitle);
+            joyutitle = "<div id='dmm2ssw_pagetitle'>*[[" + '<a class="actress_link" href="http://sougouwiki.com/d/' +EscapeEUCJP(joyuname) + '" target="_blank">' + joyutitle + '</a>' + ">" + joyuurl + "]]<br><br></div>";
+            $("div#dmm2ssw_pagetop").append(joyutitle);
           }
           $("body").find("div#dmm2ssw").append(basicdiv);
           $("body").find("div#dmm2ssw").append(vrdiv);
@@ -1358,6 +1375,11 @@
               {
                 hinban = hinban.substr(0, hinban.length - 1);
               }
+              // 最後がdodの場合はdod削除
+              if(hinban.indexOf("dod") == hinban.length - 3)
+              {
+                hinban = hinban.replace("dod", "");
+              }
               hinban = hinban.replace('\n', '').toUpperCase();
               var numb = 0;
               var latterhalf = hinban;
@@ -1395,7 +1417,7 @@
                 latterhalf = latterhalf + "Z";
               }
               hinban = prefix + "-" + latterhalf;
-              number = parseInt(latterhalf);
+              number = parseInt(latterhalf.replace(/[^0-9]/g, ""));
               console.log("hinban: " + hinban);
               console.log("prefix: " + prefix);
               console.log("number: " + number);
@@ -3102,6 +3124,7 @@
       if (msg.release == "") {
         matomerelease = msg.broadcast_release;
       }
+      //================================================================================
       // 女優まとめページ用出力
       if (output == "actress") {
         console.log("msg.wiki_label: " + msg.wiki_label);
@@ -3113,11 +3136,26 @@
           wiki_series = "　[[(シリーズ一覧)>" + '<a class="actress_link" href="http://sougouwiki.com/d/' +EscapeEUCJP(msg.wiki_series) + '" target="_blank">' + msg.wiki_series + '</a>' + "]]";
         }
         var cast_list = "";
+        var omnibus = "";
         // 2人以上のときは出演者を表示
         if (msg.cast.length >= 2) {
           cast_list = "出演者：[[";
           for(var i = 0; i < msg.cast.length; i++)
           {
+            if(msg.url.indexOf(baseurl_dmm) != -1 && msg.cast[i] == "/")
+            {
+               omnibus = "男優：";
+               for(var j = i + 1; j < msg.cast.length; j++)
+               {
+                 if(j != i + 1)
+                 {
+                   omnibus += "／";
+                 }
+                 omnibus += msg.cast[j];
+               }
+               omnibus += "\n<br>";
+               break;
+            }
             if(i != 0)
             {
               cast_list += "]]／[[";
@@ -3265,7 +3303,7 @@
           matomelabel = "（" + matomelabel + "）";
         }
         
-        var joyumatome = "//" + matomerelease + matomehinban + "\n<br>" + "[[" + matometitle + matomelabel + ">" + msg.url + "]]" + wiki_label + wiki_series + "\n<br>" + "[[" + msg.smallimg + ">" + msg.largeimg + "]]" + "\n<br>" + cast_list + matomelimited + "\n<br>";
+        var joyumatome = '<span class="matome_' + msg.hinban + '"> //' + matomerelease + matomehinban + "\n<br>" + "[[" + matometitle + matomelabel + ">" + msg.url + "]]" + wiki_label + wiki_series + "\n<br>" + "[[" + msg.smallimg + ">" + msg.largeimg + "]]" + "\n<br>" + cast_list + omnibus + matomelimited + "\n<br></span>";
         // アダルトサイトと配信系は、総集編／VR／IV／であっても、それぞれのカテゴリに表示
         if (msg.is_adultsite) {
           $("body").find("div#adultsite_works").attr("style", "visibility:visible");
@@ -3275,7 +3313,7 @@
             $("body").find("div#exdvd_works").attr("style", "visibility:visible");
             $("body").find("div#exdvd_works").append(joyumatome);
         } else if (msg.is_exbroadcast) {
-          joyumatome = "//" + matomerelease + matomehinban + "\n<br>" + "-[[" + matometitle + matomelabel + ">" + msg.url + "]]" + "\n<br>" + cast_list + "\n<br>";
+          joyumatome = '<span class="matome_' + msg.hinban + '"> //' + matomerelease + matomehinban + "\n<br>" + "-[[" + matometitle + matomelabel + ">" + msg.url + "]]" + "\n<br>" + cast_list + "\n<br></span>";
           $("body").find("div#exbroadcast_works").attr("style", "visibility:visible");
           $("body").find("div#exbroadcast_works").append(joyumatome);
         } else if (msg.is_omnibus) {
@@ -3295,7 +3333,7 @@
         // Twitterの場合
         } else if(msg.url.indexOf(baseurl_twitter) != -1)
         {
-          joyumatome = "[[" + matometitle + ">" + msg.url + "]]\n" + "[[" + msg.smallimg + ">" + msg.largeimg + "]]\n" + msg.cast + "\n<br><br><br>";
+          joyumatome = '<span class="matome_' + msg.hinban + '"> //' + "[[" + matometitle + ">" + msg.url + "]]\n" + "[[" + msg.smallimg + ">" + msg.largeimg + "]]\n" + msg.cast + "\n<br><br><br></span>";
           $("body").find("div#twitter_part").attr("style", "visibility:visible");
           $("body").find("div#twitter_part").append(joyumatome);
         } else {
@@ -3306,11 +3344,8 @@
           var alert = $("div#title_fix_alert");
           if(alert.length == 0)
           {
-            var adddiv = "<div id='title_fix_alert'><font color='red'>※ 赤字のタイトルは伏字を予測解除しています。コピペする際は注意してください。</font></div>";
-            if(div_to_add != null)
-            {
-              div_to_add.prepend(adddiv);
-            }
+            var adddiv = "<div id='title_fix_alert'><font color='red'>※ 赤字のタイトルは伏字を予測解除しています。コピペする際は注意してください。</font><br><br></div>";
+            $("div#dmm2ssw_pagetop").prepend(adddiv);
           }
         }
         // 女優が一人の場合で、個別ページのとき
@@ -3320,17 +3355,16 @@
           {
             var actress_link = '<div class="actress_link" align="left"><font color="red"><a class="actress_link" href="http://sougouwiki.com/d/' +EscapeEUCJP(msg.cast[0]) + '" target="_blank">' + msg.cast[0] + '</a></font></div>';
             
-            if(div_to_add != null)
-            {
-              div_to_add.prepend(actress_link);
-            }
+            $("div#dmm2ssw_pagetop").append(actress_link);
           }
         }
       }
+      //================================================================================
       // レーベルまとめページ用出力
       else
       {
         var matomecast = "";
+        var omnibus = "";
         // 出演者情報なしの場合
         if (msg.cast.length == 0) {
           // 別名があるとき
@@ -3350,6 +3384,19 @@
           matomecast = "[[";
           for(var i = 0; i < msg.cast.length; i++)
           {
+            if(msg.url.indexOf(baseurl_dmm) != -1 && msg.cast[i] == "/")
+            {
+               omnibus = "男優：";
+               for(var j = i + 1; j < msg.cast.length; j++)
+               {
+                 if(j != i + 1)
+                 {
+                   omnibus += "／";
+                 }
+                 omnibus += msg.cast[j];
+               }
+               break;
+            }
             if(i != 0)
             {
               matomecast += "]]／[[";
@@ -3362,65 +3409,138 @@
         if (url.indexOf(baseurl_dmm) != -1 && msg.is_adultsite) {
           matometitle = msg.anothername + "~~" + msg.threesize;
         }
-        var omnibus = "";
         if (msg.is_omnibus) {
-          omnibus = "総集編作品";
-        }
-        var labelmatome = "";
-        // 連番出力の場合は、連番の抜けを埋める
-        if(!is_first_product && is_renban && msg.number != NaN)
-        {
-          var sum = 1;
-          // 番号が同じか低い場合はスキップ
-          if(number + sum > msg.number)
+          if(omnibus.length > 0)
           {
-            console.log("ignore this product: " + msg.hinban);
-            return true;
-          }
-          while(number + sum < msg.number)
-          {
-            console.log("insert: "+ msg.prefix + "-" + String(number + sum));
-            var labelmatome = "|" + msg.prefix + "-" + String(number + sum) + "|||||欠番|\n<br>";
-            if (is_director) {
-              labelmatome = "|" + msg.prefix + "-" + String(number + sum) + "||||||欠番|\n<br>";
-            }
-            $("body").find("div#basic_works").append(labelmatome);
-            sum++;
-          }
-        }
-        labelmatome = "";
-        number = msg.number;
-        // 10連番ごとに見出し行を挿入
-        if(!is_first_product && msg.number%10 == 1)
-        {
-          if (!is_director) {
-            labelmatome = "|~NO|PHOTO|TITLE|ACTRESS|RELEASE|NOTE|\n<br>";
+             omnibus = "総集編作品~~" + omnibus;
           }
           else
           {
-            labelmatome += "|~NO|PHOTO|TITLE|ACTRESS|DIRECTOR|RELEASE|NOTE|\n<br>";
+             omnibus = "総集編作品";
           }
         }
+        var labelmatome = "";
+        labelmatome = "";
+        // 最初じゃない
+        if(!is_first_product)
+        {
+          // 連番出力の場合は、連番の抜けを埋める
+          if(is_renban && msg.number > 0)
+          {
+            var sum = 1;
+            // 番号が同じか低い場合はそのまま出力
+            if(number + sum > msg.number)
+            {
+              console.log("less number than before: " + msg.hinban);
+            }
+            while(number + sum < msg.number)
+            {
+              var thishinban = msg.hinban.replace(String(msg.number), String(number + sum));
+              // 既に要素がある場合は無視
+              if($("span.matome_" + thishinban).length > 0)
+              {
+                 sum++;
+                 continue;
+              }
+              else
+              {
+                  var labelspan = '<span class="matome_' + thishinban + '"></span>';
+                  $("body").find("div#basic_works").append(labelspan);
+              }
+              labelmatome = "";
+              // 10連番ごとに見出し行を挿入
+              if((number+sum)%10 == 1)
+              {
+                if (!is_director) {
+                  labelmatome += "|~NO|PHOTO|TITLE|ACTRESS|RELEASE|NOTE|\n<br>";
+                }
+                else
+                {
+                  labelmatome += "|~NO|PHOTO|TITLE|ACTRESS|DIRECTOR|RELEASE|NOTE|\n<br>";
+                }
+              }
+              labelmatome += last_labelmatome.split(String(number)).join(String(number + sum));
+              $("span.matome_" + thishinban).first().append(labelmatome);
+              console.log("insert spans");
+              sum++;
+            }
+          }
+          labelmatome = "";
+
+          // 10連番ごとに見出し行を挿入
+          if(msg.number%10 == 1)
+          {
+            if (!is_director) {
+              labelmatome += "|~NO|PHOTO|TITLE|ACTRESS|RELEASE|NOTE|\n<br>";
+            }
+            else
+            {
+              labelmatome += "|~NO|PHOTO|TITLE|ACTRESS|DIRECTOR|RELEASE|NOTE|\n<br>";
+            }
+          }
+        }
+        else
+        {
+          var adddiv = '<div class="another_wikipage_link"></div><br>';
+            $("div#dmm2ssw_pagetop").append(adddiv);
+        }
+        number = msg.number;
         is_first_product = false;
+        
+        if(number > 0)
+        {
+           var num_page = Math.floor((number- 1) / 200);
+           console.log("link_num: " + $("div.another_wikipage_link_" + num_page).length);
+           if($("div.another_wikipage_link_" + num_page).length > 0)
+           {
+           }
+           else
+           {
+             var labeltitle = " ";
+             if(dmm_label_name.length > 0)
+             {
+               labeltitle = dmm_label_name;
+               if(num_page > 0)
+               {
+                 labeltitle += " " + (num_page + 1);
+               }
+             }
+             labeltitle = '<a class="label_link" href="http://sougouwiki.com/d/' +EscapeEUCJP(labeltitle) + '" target="_blank">' + labeltitle + '</a>';
+             var adddiv = "<div class='another_wikipage_link_" + num_page + "'>※(注)''" + msg.prefix + "-" + (num_page * 2) + "01～" + msg.prefix + "-" + (num_page * 2 + 2) + "00の作品については「[[" + labeltitle + "]]」をご覧ください。''<br></div>";
+               $("div.another_wikipage_link").append(adddiv);
+               console.log("another wikipagelink added.");
+           }
+        }
+
+        // 既に要素がある場合は中身を消して上書き
+        if($("span.matome_" + msg.hinban).length > 0)
+        {
+          $("span.matome_" + msg.hinban).empty();
+          console.log("found span: " + msg.hinban + ", replace it.");
+        }
+        else
+        {
+            var labelspan = '<span class="matome_' + msg.hinban + '"></span>';
+            $("body").find("div#basic_works").append(labelspan);
+        }
         if (!is_director) {
           labelmatome += "|[[" + msg.hinban + ">" + msg.url + "]]|[[" + msg.smallimg + ">" + msg.largeimg + "]]|" + msg.title + "|" + matomecast + "|" + matomerelease + "|" + omnibus + "|\n<br>";
+          last_labelmatome = "|[[" + msg.hinban + ">" + msg.url + "]]|[[" + msg.smallimg + ">" + msg.largeimg + "]]|||--||\n<br>";
         }
         else
         {
           labelmatome += "|[[" + msg.hinban + ">" + msg.url + "]]|[[" + msg.smallimg + ">" + msg.largeimg + "]]|" + matometitle + "|" + matomecast + "|" + msg.director + "|" + matomerelease + "|" + omnibus + "|\n<br>";
+          last_labelmatome = "|[[" + msg.hinban + ">" + msg.url + "]]|[[" + msg.smallimg + ">" + msg.largeimg + "]]||||--||\n<br>";
         }
-        $("body").find("div#basic_works").append(labelmatome);
+        $("span.matome_" + msg.hinban).first().append(labelmatome);
       }
       if(msg.is_title_fixed)
       {
         var alert = $("div#title_fix_alert");
         if(alert.length == 0)
         {
-          var adddiv = "<div id='title_fix_alert'><font color='red'>※ 赤字のタイトルは伏字を予測解除しています。コピペする際は注意してください。</font></div>";
-          if(div_to_add != null)
-          {
-            div_to_add.prepend(adddiv);
-          }
+          var adddiv = "<div id='title_fix_alert'><font color='red'>※ 赤字のタイトルは伏字を予測解除しています。コピペする際は注意してください。</font><br><br></div>";
+            $("div#dmm2ssw_pagetop").prepend(adddiv);
         }
       }
       console.log("result: " + msg.hinban);
@@ -3472,6 +3592,8 @@
     is_search_release_with_wiki = false;
     is_first_product = false;
     is_detail_page = false;
+    last_labelmatome = "";
+    dmm_label_name = "";
     title = "";
     service = "";
     duration = "";
@@ -3591,6 +3713,7 @@
         wiki_series: wiki_series,
         hinban: hinban,
         prefix: prefix,
+        number: number,
         smallimg: smallimg,
         largeimg: largeimg,
         release: release,
