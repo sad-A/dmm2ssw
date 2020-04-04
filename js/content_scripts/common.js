@@ -3421,51 +3421,57 @@
         }
         var labelmatome = "";
         labelmatome = "";
-        // 最初じゃない
-        if(!is_first_product)
+        // 連番出力の場合は、連番の抜けを埋める
+        if(is_renban && msg.number > 0)
         {
-          // 連番出力の場合は、連番の抜けを埋める
-          if(is_renban && msg.number > 0)
+          var sum = 1;
+          while(number + sum < msg.number)
           {
-            var sum = 1;
-            // 番号が同じか低い場合はそのまま出力
-            if(number + sum > msg.number)
+            var thishinban = msg.hinban.replace(String(msg.number), String(number + sum));
+            // 既に要素がある場合は無視
+            if($("span.matome_" + thishinban).length > 0)
             {
-              console.log("less number than before: " + msg.hinban);
+               sum++;
+               continue;
             }
-            while(number + sum < msg.number)
+            else
             {
-              var thishinban = msg.hinban.replace(String(msg.number), String(number + sum));
-              // 既に要素がある場合は無視
-              if($("span.matome_" + thishinban).length > 0)
-              {
-                 sum++;
-                 continue;
+               var labelspan = '<span class="matome_' + thishinban + '"></span>';
+                $("body").find("div#basic_works").append(labelspan);
+            }
+            labelmatome = "";
+            // 10連番ごとに見出し行を挿入
+            if((number+sum)%10 == 1)
+            {
+              if (!is_director) {
+                labelmatome += "|~NO|PHOTO|TITLE|ACTRESS|RELEASE|NOTE|\n<br>";
               }
               else
               {
-                  var labelspan = '<span class="matome_' + thishinban + '"></span>';
-                  $("body").find("div#basic_works").append(labelspan);
+                labelmatome += "|~NO|PHOTO|TITLE|ACTRESS|DIRECTOR|RELEASE|NOTE|\n<br>";
               }
-              labelmatome = "";
-              // 10連番ごとに見出し行を挿入
-              if((number+sum)%10 == 1)
-              {
-                if (!is_director) {
-                  labelmatome += "|~NO|PHOTO|TITLE|ACTRESS|RELEASE|NOTE|\n<br>";
-                }
-                else
-                {
-                  labelmatome += "|~NO|PHOTO|TITLE|ACTRESS|DIRECTOR|RELEASE|NOTE|\n<br>";
-                }
-              }
-              labelmatome += last_labelmatome.split(String(number)).join(String(number + sum));
-              $("span.matome_" + thishinban).first().append(labelmatome);
-              console.log("insert spans");
-              sum++;
             }
+            labelmatome += last_labelmatome.split(String(number)).join(String(number + sum));
+            // 最初の場合
+            if(is_first_product)
+            {
+              labelmatome += "|[[" + msg.hinban + ">" + msg.url + "]]|[[" + msg.smallimg + ">" + msg.largeimg + "]]|||--||\n<br>";
+              labelmatome = labelmatome.split(String(msg.number)).join(String(number + sum));
+            }
+            $("span.matome_" + thishinban).first().append(labelmatome);
+            // 最初の場合は一旦隠す
+            if(is_first_product)
+            {
+              $("span.matome_" + thishinban).first().hide();
+            }
+            console.log("insert spans");
+            sum++;
           }
-          labelmatome = "";
+        }
+        labelmatome = "";
+        // 最初じゃない
+        if(!is_first_product)
+        {
 
           // 10連番ごとに見出し行を挿入
           if(msg.number%10 == 1)
@@ -3515,8 +3521,21 @@
         // 既に要素がある場合は中身を消して上書き
         if($("span.matome_" + msg.hinban).length > 0)
         {
-          $("span.matome_" + msg.hinban).empty();
+          var span = $("span.matome_" + msg.hinban);
+          span.empty();
           console.log("found span: " + msg.hinban + ", replace it.");
+          // もし要素が隠れてる場合は、隠れてる要素を表示
+          if(span.is(":hidden"))
+          {
+             var sum = 1;
+             while(span.length > 0 && span.is(":hidden"))
+             {
+               span.show();
+               var nexthinban = msg.hinban.replace(String(msg.number), String(number + sum));
+               sum++;
+               span = $("span.matome_" + nexthinban);
+             }
+          }
         }
         else
         {
