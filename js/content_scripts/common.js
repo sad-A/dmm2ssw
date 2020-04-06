@@ -1411,13 +1411,20 @@
                 prefix = prefix.replace(/H_/, '');
                 prefix = prefix.replace(/[0-9]/g, '');
               }
+              // 後半は数字のみに
+              latterhalf = latterhalf.replace(/[^0-9]/g, "");
+              // 2桁の場合は0埋め
+              if(latterhalf.length < 3)
+              {
+                latterhalf = "0" + latterhalf;
+              }
               // 青空ソフトの場合、最後にZを足す
               if(prefix == "AOZ")
               {
                 latterhalf = latterhalf + "Z";
               }
               hinban = prefix + "-" + latterhalf;
-              number = parseInt(latterhalf.replace(/[^0-9]/g, ""));
+              number = parseInt(latterhalf);
               console.log("hinban: " + hinban);
               console.log("prefix: " + prefix);
               console.log("number: " + number);

@@ -198,6 +198,12 @@
   }
  
   function searchSougouWiki(sender, url) {
+    // MGSの場合、月額動画と単品動画があるので、urlを補正
+    if(url.indexOf("mgstage.com") != -1)
+    {
+      url = url.replace("mgstage.com/product/product_detail", "");
+      url = url.replace("mgstage.com/monthly/shiroutotv/video", "");
+    }
     var x = new XMLHttpRequest();
     x.open('GET', "http://sougouwiki.com/search?keywords=" + url);
     x.onload = function () {
