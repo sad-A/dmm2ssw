@@ -150,14 +150,6 @@
     }
     return true;
   });
-  chrome.alarms.onAlarm.addListener(function (alarm) {
-    if (copy_list.length > 0) {
-      saveToClipboard(copy_list[0]);
-      copy_list.splice(0, 1);
-    }
-    return true;
-  });
- 
   function parseDetail(tabid, to_url)
   {
     console.log("send message: parse_detail to: " + tabid);
@@ -185,18 +177,6 @@
     });
   }
 
-  function saveToClipboard(str) {
-    // copy 用に textareaを作る
-    var textArea = document.createElement("textarea");
-    textArea.style.cssText = "position:absolute;left:-100%";
-    document.body.appendChild(textArea);
-    textArea.value = str;
-    textArea.select();
-    console.log("copy: " + str);
-    document.execCommand("copy");
-    document.body.removeChild(textArea);
-  }
- 
   function searchSougouWiki(sender, url) {
     // MGSの場合、月額動画と単品動画があるので、urlを補正
     if(url.indexOf("mgstage.com") != -1)

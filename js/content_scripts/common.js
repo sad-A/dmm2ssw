@@ -37,6 +37,7 @@
   var hinban = "";
   var prefix = "";
   var number = 0;
+  var last_numbers = {};
   var sougouwikipage = "";
   var wiki_label = "";
   var wiki_series = "";
@@ -53,6 +54,7 @@
   var is_title_fixed = false;
   var title_list = [];
   var baseurl_dmm = "dmm.co.jp";
+  var baseurl_dmmcom = "dmm.com";
   var baseurl_mgs = "mgstage.com";
   var baseurl_unext = "video.hnext.jp";
   var baseurl_faleno = "faleno.jp";
@@ -80,6 +82,7 @@
   var url_details = "-/detail/=/cid=";
   var url_list = "-/list/=/";
   var url_actress = "article=actress";
+  var url_actor = "article=actor";
   var url_label = "article=label";
   var url_maker = "article=maker";
   var url_keyword = "article=keyword";
@@ -181,8 +184,8 @@
       console.log("output: " + output);
       console.log("is_search_wiki: " + is_search_wiki);
       var adddiv = "<div id='dmm2ssw' align='left'></div>";
-      // FANZAの場合
-      if(url.indexOf(baseurl_dmm) != -1)
+      // FANZA/dmm.comの場合
+      if(url.indexOf(baseurl_dmm) != -1 || url.indexOf(baseurl_dmmcom) != -1)
       {
         div_to_add = $("body").find("td#mu");
         div_to_add.prepend(adddiv);
@@ -432,9 +435,9 @@
       $("body").find("div#dmm2ssw").append(pagetop);
       if (output == "label") {
         // DVDのレーベルページのとき
-        if(url.indexOf(url_dvd) != -1 && url.indexOf(url_label) != -1)
+        if(url.indexOf(url_dvd) != -1 && (url.indexOf(url_label) != -1 || url.indexOf(url_maker) != -1))
         {
-          var labeltitle = $("p.headwithelem").find("span[itemprop=name]").last().text();
+          var labeltitle = $("h1.headwithelem").find("span[itemprop=name]").last().text();
           console.log("labeltitle: " + labeltitle);
           dmm_label_name = labeltitle;
           var labelurl = url;
@@ -444,15 +447,6 @@
           labeltitle = "<div id='dmm2ssw_pagetitle'>*[[" + '<a class="label_link" href="http://sougouwiki.com/d/' +EscapeEUCJP(dmm_label_name) + '" target="_blank">' + labeltitle + '</a>' + ">" + labelurl + "]]<br><br></div>";
           $("div#dmm2ssw_pagetop").append(labeltitle);
         }
-        var labelmatome = "{| class=\"edit\"\n<br>|~NO|PHOTO|TITLE|ACTRESS|DIRECTOR|RELEASE|NOTE|\n<br>";
-        if (!is_director) {
-          labelmatome = "{| class=\"edit\"\n<br>|~NO|PHOTO|TITLE|ACTRESS|RELEASE|NOTE|\n<br>";
-        }
-        $("body").find("div#dmm2ssw").append(labelmatome);
-        var basicdiv = '<div id="basic_works"></div>';
-        $("body").find("div#dmm2ssw").append(basicdiv);
-        var enddiv = "|}\n<br>";
-        $("body").find("div#dmm2ssw").append(enddiv);
       } else if (output == "actress") {
         var basicdiv = '<div id="basic_works"></div>';
         var vrdiv = '<div id="vr_works" style="visibility:hidden">----\n<br>**VR作品\n<br></div>';
@@ -463,14 +457,13 @@
         var exbroadcastdiv = '<div id="exbroadcast_works" style="visibility:hidden">----\n<br>**その他作品(配信系)\n<br></div>';
         var doujindiv = '<div id="doujin_works" style="visibility:hidden">----\n<br>**同人サークル作品\n<br></div>';
         var twitterdiv = '<div id="twitter_part" style="visibility:hidden">----\n**Twitter\n</div>';
-        // FANZAの場合
-        if(url.indexOf(baseurl_dmm) != -1)
+        // FANZA, dmm.comの場合
+        if(url.indexOf(baseurl_dmm) != -1 || (url.indexOf(baseurl_dmmcom) != -1))
         {
           // DVDの女優ページのとき
-          if(url.indexOf(url_dvd) != -1 && url.indexOf(url_actress) != -1)
+          if(url.indexOf(url_dvd) != -1 && (url.indexOf(url_actress) != -1 || url.indexOf(url_actor) != -1))
           {
-            var joyutitle = $("title").text();
-            joyutitle = joyutitle.substr(0, joyutitle.indexOf("-") - 1);
+            var joyutitle = $("h1.headwithelem").find("span[itemprop=name]").last().text();
             var joyuname = joyutitle.substr(0, joyutitle.indexOf("("));
             joyutitle = joyutitle.replace("(", "（");
             joyutitle = joyutitle.replace(")", "）");
@@ -512,8 +505,8 @@
           $("body").find("div#dmm2ssw").append(twitterdiv);
         }
       }
-      // FANZAの場合
-      if (url.indexOf(baseurl_dmm) != -1) {
+      // FANZA/dmm.comの場合
+        if ((url.indexOf(baseurl_dmm) != -1) || (url.indexOf(baseurl_dmmcom) != -1)) {
         // detail
         if (url.indexOf(url_details) != -1) {
           is_detail_page = true;
@@ -1093,7 +1086,7 @@
       wiki_label = "";
       wiki_series = "";
       // FANZAの場合
-      if (url.indexOf(baseurl_dmm) != -1) {
+      if ((url.indexOf(baseurl_dmm) != -1) || (url.indexOf(baseurl_dmmcom) != -1)) {
         var cutoff = url.indexOf("?");
         if (cutoff != -1) {
           url = url.substr(0, cutoff);
@@ -1126,6 +1119,14 @@
         if (url.indexOf("videoc") != -1 || url.indexOf("videoa") != -1) {
           is_adultsite = true;
         }
+        var yoyaku = false;
+          $("span.red").each(function() {
+            if($(this).text().indexOf("【予約】") != -1)
+            {
+              yoyaku = true;
+            }
+          });
+        
         for (var i = 0; i < msg._OMITWORDS.length; i += 2) {
           title = title.replace(msg._OMITWORDS[i], '');
         }
@@ -1161,16 +1162,20 @@
         // たまにfullがない場合がある
         if (!largeimg) {
           largeimg = smallimg;
-          // たまにsmallimgにjs.jpgが使われている
-          if (smallimg.indexOf("jp.jpg") != -1 || smallimg.indexOf("js.jpg") != -1) {
-            // 一旦、js.jpgはjp.jpgに変換する
-            smallimg = smallimg.replace("js.jpg", "jp.jpg");
-            // 正方形は147px指定
-            smallimg = "&ref(" + smallimg + ", 147)";
+          if(yoyaku)
+          {
+              largeimg = largeimg.replace("ps.jpg", "pl.jpg");
           }
-          console.log("smallimg: " + smallimg);
-          console.log("largeimg: " + largeimg);
         }
+        // たまにsmallimgにjs.jpgが使われている
+        if (smallimg.indexOf("jp.jpg") != -1 || smallimg.indexOf("js.jpg") != -1) {
+          // 一旦、js.jpgはjp.jpgに変換する
+          smallimg = smallimg.replace("js.jpg", "jp.jpg");
+          // 正方形は147px指定
+          smallimg = "&ref(" + smallimg + ", 147)";
+        }
+        console.log("smallimg: " + smallimg);
+        console.log("largeimg: " + largeimg);
         var castlist = "";
         var more_cast = false;
         console.log("url: " + url);
@@ -1301,7 +1306,11 @@
                   type: "GET",
                   url: ajax_url,
                   success: function (msg) {
-                    castlist = msg;
+                    // performerに情報が無い人もいる
+                    if(msg.indexOf("----") == -1)
+                    {
+                      castlist = msg;
+                    }
                     castlist = castlist.replace(/<("[^"]*"|'[^']*'|[^'">])*>/g, '');
                     castlist = castlist.replace(/（/g, "(");
                     castlist = castlist.replace(/）/g, ")");
@@ -1326,7 +1335,14 @@
                        label = maker;
                     }
                     var suburl = "";
-                    send_detail_message(is_search_wiki, baseurl_dmm, url);
+                    if(url.indexOf(baseurl_dmm) != -1)
+                    {
+                      send_detail_message(is_search_wiki, baseurl_dmm, url);
+                    }
+                    else if(url.indexOf(baseurl_dmmcom) != -1)
+                    {
+                      send_detail_message(is_search_wiki, baseurl_dmmcom, url);
+                    }
                   }
                 });
               } else {
@@ -1367,12 +1383,12 @@
             // 品番
             } else if (text.indexOf("品番") != -1) {
               hinban = $(this).next().text();
+              // 最後にsoが来る場合は取る
               if (hinban.length - 2 == hinban.lastIndexOf("so")) {
                 hinban = hinban.substr(0, hinban.length - 2);
               }
-              // 青空ソフトの場合、一旦最後のZを取る
-              if(hinban.indexOf("aoz") != -1)
-              {
+              // 最後にzが来る場合は取る
+              if(hinban.length - 1 == hinban.lastIndexOf("z")) {
                 hinban = hinban.substr(0, hinban.length - 1);
               }
               // 最後がdodの場合はdod削除
@@ -1425,6 +1441,7 @@
               }
               hinban = prefix + "-" + latterhalf;
               number = parseInt(latterhalf);
+//              last_numbers[prefix] = parseInt(latterhalf);
               console.log("hinban: " + hinban);
               console.log("prefix: " + prefix);
               console.log("number: " + number);
@@ -1438,7 +1455,14 @@
         // 出演者探索ができないとき
         if (!use_ajax) {
           var suburl = "";
-          send_detail_message(is_search_wiki, baseurl_dmm, url);
+          if(url.indexOf(baseurl_dmm) != -1)
+          {
+            send_detail_message(is_search_wiki, baseurl_dmm, url);
+          }
+          else if(url.indexOf(baseurl_dmmcom) != -1)
+          {
+            send_detail_message(is_search_wiki, baseurl_dmmcom, url);
+          }
         }
       }
       // MGSの場合
@@ -1492,6 +1516,7 @@
             prefix = hinban.substr(0, hinban.indexOf("-"));
             var latterhalf = hinban.substr(hinban.indexOf("-") + 1);
             number = parseInt(latterhalf);
+//            last_numbers[prefix] = parseInt(latterhalf);
             console.log("prefix: " + prefix);
             console.log("number: " + number);
           }
@@ -1566,6 +1591,7 @@
         hinban = url.substr(url.lastIndexOf("/") + 1);
         prefix = hinban.replace(/[0-9]/g, "");
         number = parseInt(hinban.replace(/[^0-9]/g, ""));
+//        last_numbers[prefix] = number;
         release = $("span.ttl-subinfo__text").text();
         release = release.replace("年", "/");
         release = release.replace("月", "");
@@ -1681,10 +1707,11 @@
             title = title.substr(0, title.indexOf("-"));
             title = title.replace(/[^A-Za-z0-9]/g, "");
             hinban = title;
+            prefix = title.replace(/[0-9]/g, "");
             number = parseInt(title.replace(/[^0-9]/g, ""));
+//            last_numbers[prefix] = number;
             console.log("title: " + title);
             console.log("number: " + number);
-            prefix = title.replace(/[0-9]/g, "");
             anothername = $(this).children("span").text();
             anothername = anothername.replace(/-/g, "");
             console.log("anothername: " + anothername);
@@ -1758,13 +1785,15 @@
         title = $("div.modelwaku").first().find("img").attr("alt");
         title = title.replace(" ", "");
         console.log("title: " + title);
+        prefix = "MyWife";
         var numbertext = $("div.modelsample_photowaku").first().find("img").attr("src");
         if(numbertext.indexOf("girl/") != -1 && numbertext.indexOf("/01.jpg") != -1)
         {
           numbertext = numbertext.substr(numbertext.indexOf("girl/") + 5);
           numbertext = numbertext.substr(0, numbertext.indexOf("/01.jpg"));
           number = parseInt(numbertext);
-          console.log("number: " + number);
+//          last_numbers[prefx] = number;
+          console.log("number: " + last_numbers[prefix]);
         }
         anothername = title;
         var text = $("div.modelsamplephototop").first().text();
@@ -1820,6 +1849,8 @@
         text = text.replace(/\u000a/g, ",");
         hinban = url.substring(url.indexOf("ID=") + 3);
         number = parseInt(hinban.replace(/[a-z]/g, ""));
+        prefix = "RealFile";
+//        last_numbers[prefix] = number;
         if(text.indexOf("名前") != -1)
         {
           title = text.substr(text.indexOf("名前") + 3);
@@ -1882,6 +1913,7 @@
       // HimeMixの場合
       else if(url.indexOf(baseurl_himemix) != -1)
       {
+        prefix = "HimeMix";
         // 定額個別ページの場合
         if(url.indexOf(himemixurl_teigaku_detail) != -1)
         {
@@ -1889,6 +1921,7 @@
           if(title.indexOf("No.") != -1)
           {
             number = parseInt(title.replace(/[^0-9]/g, ""));
+//            last_numbers[prefix] = number;
             title = title.substr(title.indexOf("No.") + 3);
             title = title.replace(/[0-9]/g, "");
             title = title.replace(/\u3000/g, "");
@@ -1927,6 +1960,7 @@
           if(title.indexOf("No.") != -1)
           {
             number = parseInt(title.replace(/[^0-9]/g, ""));
+//            last_numbers[prefix] = number;
             title = title.substr(title.indexOf("No.") + 3);
             title = title.replace(/[0-9]/g, "");
             title = title.replace(/\u3000/g, "");
@@ -1998,12 +2032,15 @@
         largeimg = $("div#gallery_girl_photo").find("img").attr("src");
         if(url.indexOf(baseurl_girlsblue) != -1)
         {
+          prefix = "GirlsBlue";
           smallimg = "&ref(https://www.girls-blue.com/free_photo/" + hinban + "/img1.jpg, 147)";
         }
         else if(url.indexOf(baseurl_happyfish) != -1)
         {
+          prefix = "HappyFish";
           smallimg = "&ref(https://www.h-fish.com/free_photo/" + hinban + "/img1.jpg, 147)";
         }
+//        last_numbers[prefix] = number;
         var text = $("div#gallery_girl_profile").find("p").text();
         console.log("text: " + text);
         if(text.indexOf("名　前：") != -1 && text.indexOf("身　長：") != -1 && text.indexOf("サイズ：") != -1 && (text.indexOf("趣　味：") != -1 || text.indexOf("初自慰：") != -1))
@@ -2088,6 +2125,7 @@
         hinban = hinban.replace(/^a-z0-9]/g, "");
         prefix = hinban.replace(/[0-9]/g, "");
         number = parseInt(hinban.replace(/[^0-9]/g, ""));
+//        last_numbers[prefix] = number;
         title = $("div.modelname").first().text();
         cast = title.split(",");
         anothername = $("div.modelProfile").first().text();
@@ -2122,8 +2160,10 @@
         console.log("release: " + release);
         hinban = url.substr(url.indexOf("article/") + 8);
         hinban = hinban.replace("/", "");
+        prefix = "FC2 PPV"
         number = parseInt(hinban);
-        hinban = "FC2 PPV " + hinban;
+//        last_numbers[prefix] = number;
+        hinban = prefix + " " + hinban;
         largeimg = "https:" + $("div.items_article_MainitemThumb").first().find("img").attr("src");
         smallimg = "&ref(" + largeimg + ", 147)";
         var dlist = $("div.items_article_MainitemThumb").first().find("p.items_article_info").text();
@@ -2245,6 +2285,7 @@
         hinban = url.substr(url.indexOf("ID=") + 3).toUpperCase();
         prefix = hinban.replace(/[0-9]/g, "");
         number = parseInt(hinban.replace(/[^0-9]/g, ""));
+//        last_numbers[prefix] = number;
         anothername = "";
         cast.push(castlist);
         is_omnibus = false;
@@ -2288,6 +2329,7 @@
             hinban = hinban.replace(/\u0009/g, "");
             prefix = hinban.replace(/[0-9]/g, "");
             number = parseInt(hinban.replace(/[^0-9]/g, ""));
+//            last_numbers[prefix] = number;
             
             console.log("hinban: " + hinban);
             
@@ -2357,6 +2399,7 @@
             hinban = hinban.replace(/\u0009/g, "");
             prefix = hinban.replace(/[0-9]/g, "");
             number = parseInt(hinban.replace(/[^0-9]/g, ""));
+//            last_numbers[prefix] = number;
             console.log("hinban: " + hinban);
             $("img").each( function() {
               var src = $(this).attr("src");
@@ -2433,6 +2476,7 @@
         hinban = hinban.replace(/\//g, "");
         number = parseInt(hinban.replace(/[^0-9]/g, ""));
         prefix = hinban.replace(/[0-9]/g, "");
+//        last_numbers[prefix] = number;
         release = $("div.single-meta span.date").text();
         release = release.replace(/[^0-9\/]/g, "");
         broadcast_release = release;
@@ -2578,6 +2622,7 @@
         hinban = hinban.replace("商品番号: ", "");
         prefix = hinban.substr(0, hinban.indexOf("-"));
         number = parseInt(hinban.replace(/[^0-9]/g, ""));
+//        last_numbers[prefix] = number;
         anothername = "";
         is_omnibus = false;
         is_iv = false;
@@ -2698,8 +2743,9 @@
         director = "";
         service = "";
         hinban = "";
-        prefix = "";
+        prefix = "Carib";
         number = 0;
+//        last_numbers[prefix] = number;
         anothername = "";
         is_limited = false;
         is_dod = false;
@@ -2749,8 +2795,9 @@
             director = "";
             service = "";
             hinban = "";
-            prefix = "";
+            prefix = "Ippon";
             number = 0;
+//            last_numbers[prefix] = number;
             anothername = "";
             is_omnibus = false;
             is_iv = false;
@@ -2835,6 +2882,7 @@
         hinban = "HEYZO-" + movie_id;
         prefix = "HEYZO";
         number = parseInt(movie_id);
+//          last_numbers[prefix] = number;
         anothername = "";
         is_omnibus = false;
         is_iv = false;
@@ -2960,6 +3008,7 @@
             hinban = $(this).next().text();
             prefix = hinban.replace(/[0-9]\-/g, "");
             number = parseInt(hinban.replace(/[^0-9]/g, ""));
+//            last_numbers[prefix] = number;
             console.log("hinban: " + hinban);
           }
         });
@@ -3010,8 +3059,9 @@
         director = "";
         service = "";
         hinban = "";
-        prefix = "";
+        prefix = "Getchu";
         number = 0;
+//        last_numbers[prefix] = number;
         anothername = "";
         is_omnibus = false;
         is_iv = false;
@@ -3060,8 +3110,9 @@
         director = "";
         service = "";
         hinban = "";
-        prefix = "";
+        prefix = "Twitter";
         number = 0;
+//        last_numbers[prefix] = number;
         is_omnibus = false;
         is_iv = false;
         is_vr = false;
@@ -3149,7 +3200,7 @@
           cast_list = "出演者：[[";
           for(var i = 0; i < msg.cast.length; i++)
           {
-            if(msg.url.indexOf(baseurl_dmm) != -1 && msg.cast[i] == "/")
+            if((msg.url.indexOf(baseurl_dmm) != -1 || msg.url.indexOf(baseurl_dmmcom) != -1)  && msg.cast[i] == "/")
             {
                omnibus = "男優：";
                for(var j = i + 1; j < msg.cast.length; j++)
@@ -3310,7 +3361,7 @@
           matomelabel = "（" + matomelabel + "）";
         }
         
-        var joyumatome = '<span class="matome_' + msg.hinban + '"> //' + matomerelease + matomehinban + "\n<br>" + "[[" + matometitle + matomelabel + ">" + msg.url + "]]" + wiki_label + wiki_series + "\n<br>" + "[[" + msg.smallimg + ">" + msg.largeimg + "]]" + "\n<br>" + cast_list + omnibus + matomelimited + "\n<br></span>";
+          var joyumatome = '<span class="matome_' + msg.hinban + '"> //' + matomerelease + matomehinban + "\n<br>" + "[[" + matometitle + matomelabel + ">" + msg.url + "]]" + wiki_label + wiki_series + "\n<br>" + "[[" + msg.smallimg + ">" + msg.largeimg + "]]" + "\n<br>" + cast_list + omnibus + matomelimited + "\n<br></span>";
         // アダルトサイトと配信系は、総集編／VR／IV／であっても、それぞれのカテゴリに表示
         if (msg.is_adultsite) {
           $("body").find("div#adultsite_works").attr("style", "visibility:visible");
@@ -3391,7 +3442,7 @@
           matomecast = "[[";
           for(var i = 0; i < msg.cast.length; i++)
           {
-            if(msg.url.indexOf(baseurl_dmm) != -1 && msg.cast[i] == "/")
+            if((msg.url.indexOf(baseurl_dmm) != -1 || msg.url.indexOf(baseurl_dmmcom) != -1) && msg.cast[i] == "/")
             {
                omnibus = "男優：";
                for(var j = i + 1; j < msg.cast.length; j++)
@@ -3413,7 +3464,7 @@
           matomecast += "]]";
         }
         matomerelease = matomerelease.replace(/\u002f/g, '-');
-        if (url.indexOf(baseurl_dmm) != -1 && msg.is_adultsite) {
+        if ((msg.url.indexOf(baseurl_dmm) != -1 || msg.url.indexOf(baseurl_dmmcom) != -1) && msg.is_adultsite) {
           matometitle = msg.anothername + "~~" + msg.threesize;
         }
         if (msg.is_omnibus) {
@@ -3428,13 +3479,40 @@
         }
         var labelmatome = "";
         labelmatome = "";
+        if(last_numbers[msg.prefix] == null)
+        {
+            var prefix_title = '<div class="prefix_title">**' + msg.prefix + '型番';
+            $("body").find("div#dmm2ssw").append(prefix_title);
+            var labelmatome = "{| class=\"edit\"\n<br>|~NO|PHOTO|TITLE|ACTRESS|DIRECTOR|RELEASE|NOTE|\n<br>";
+            if (!is_director) {
+              labelmatome = "{| class=\"edit\"\n<br>|~NO|PHOTO|TITLE|ACTRESS|RELEASE|NOTE|\n<br>";
+            }
+            $("body").find("div#dmm2ssw").append(labelmatome);
+            var basicdiv = '<div id="prefix_' + msg.prefix + '"></div>';
+            $("body").find("div#dmm2ssw").append(basicdiv);
+            var enddiv = "|}\n<br>";
+            $("body").find("div#dmm2ssw").append(enddiv);
+            if(is_first_product)
+            {
+                $("div.prefix_title").first().hide();
+            }
+            else
+            {
+                $("div.prefix_title").first().show();
+            }
+        }
         // 連番出力の場合は、連番の抜けを埋める
-        if(is_renban && msg.number > 0)
+        else if(is_renban && msg.number > 0)
         {
           var sum = 1;
-          while(number + sum < msg.number)
+          var last_number = 0;
+          if(last_numbers[msg.prefix] != null)
           {
-            var thishinban = msg.hinban.replace(String(msg.number), String(number + sum));
+            last_number = last_numbers[msg.prefix];
+          }
+          while(last_number + sum < msg.number)
+          {
+            var thishinban = msg.hinban.replace(String(msg.number), String(last_number + sum));
             // 既に要素がある場合は無視
             if($("span.matome_" + thishinban).length > 0)
             {
@@ -3443,8 +3521,8 @@
             }
             else
             {
-               var labelspan = '<span class="matome_' + thishinban + '"></span>';
-                $("body").find("div#basic_works").append(labelspan);
+                var labelspan = '<span class="matome_' + thishinban + '"></span>';
+                $("body").find("div#prefix_" + msg.prefix).append(labelspan);
             }
             labelmatome = "";
             // 10連番ごとに見出し行を挿入
@@ -3458,19 +3536,19 @@
                 labelmatome += "|~NO|PHOTO|TITLE|ACTRESS|DIRECTOR|RELEASE|NOTE|\n<br>";
               }
             }
-            labelmatome += last_labelmatome.split(String(number)).join(String(number + sum));
+            labelmatome += last_labelmatome.split(String(last_number)).join(String(last_number + sum));
             // 最初の場合
-            if(is_first_product)
-            {
-              labelmatome += "|[[" + msg.hinban + ">" + msg.url + "]]|[[" + msg.smallimg + ">" + msg.largeimg + "]]|||--||\n<br>";
-              labelmatome = labelmatome.split(String(msg.number)).join(String(number + sum));
-            }
+//            if(last_numbers[msg.prefix] == null)
+//            {
+//              labelmatome += "|[[" + msg.hinban + ">" + msg.url + "]]|[[" + msg.smallimg + ">" + msg.largeimg + "]]|||--||\n<br>";
+//              labelmatome = labelmatome.split(String(msg.number)).join(String(last_number + sum));
+//            }
             $("span.matome_" + thishinban).first().append(labelmatome);
             // 最初の場合は一旦隠す
-            if(is_first_product)
-            {
-              $("span.matome_" + thishinban).first().hide();
-            }
+//            if(last_numbers[msg.prefix] == null)
+//            {
+//              $("span.matome_" + thishinban).first().hide();
+//            }
             console.log("insert spans");
             sum++;
           }
@@ -3495,14 +3573,14 @@
         else
         {
           var adddiv = '<div class="another_wikipage_link"></div><br>';
-            $("div#dmm2ssw_pagetop").append(adddiv);
+          $("div#dmm2ssw_pagetop").append(adddiv);
         }
-        number = msg.number;
+        last_numbers[msg.prefix] = msg.number;
         is_first_product = false;
         
-        if(number > 0)
+        if(last_numbers[msg.prefix] > 0)
         {
-           var num_page = Math.floor((number- 1) / 200);
+           var num_page = Math.floor((last_numbers[msg.prefix]- 1) / 200);
            console.log("link_num: " + $("div.another_wikipage_link_" + num_page).length);
            if($("div.another_wikipage_link_" + num_page).length > 0)
            {
@@ -3538,7 +3616,7 @@
              while(span.length > 0 && span.is(":hidden"))
              {
                span.show();
-               var nexthinban = msg.hinban.replace(String(msg.number), String(number + sum));
+               var nexthinban = msg.hinban.replace(String(msg.number), String(last_numbers[msg.prefix] + sum));
                sum++;
                span = $("span.matome_" + nexthinban);
              }
@@ -3546,8 +3624,8 @@
         }
         else
         {
-            var labelspan = '<span class="matome_' + msg.hinban + '"></span>';
-            $("body").find("div#basic_works").append(labelspan);
+           var labelspan = '<span class="matome_' + msg.hinban + '"></span>';
+           $("body").find("div#prefix_" + msg.prefix).append(labelspan);
         }
         if (!is_director) {
           labelmatome += "|[[" + msg.hinban + ">" + msg.url + "]]|[[" + msg.smallimg + ">" + msg.largeimg + "]]|" + msg.title + "|" + matomecast + "|" + matomerelease + "|" + omnibus + "|\n<br>";

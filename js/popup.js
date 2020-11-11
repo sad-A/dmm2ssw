@@ -19,8 +19,8 @@
     });
     if(!match)
     {
-      $('input').prop("disabled", true);
-      $('button').prop("disabled", true);
+//      $('input').prop("disabled", true);
+//      $('button').prop("disabled", true);
     }
     console.log("url: " + tabs[0].url);
   });
